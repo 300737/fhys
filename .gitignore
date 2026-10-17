@@ -28,11 +28,18 @@ lib-*.aar
 # gradle wrapper 的 jar 是构建入口，必须放行
 !gradle/wrapper/gradle-wrapper.jar
 
+# media3 fork 自带的 ffmpeg 软解运行时库，打包必需，必须放行
+!media/libraries/decoder_ffmpeg/src/main/jniLibs/**/*.so
+
 # ============================================================
-#  上游 media3 fork 源码（体积巨大且非本仓库自研代码，单独维护）
-#  注意：排除后本仓库不能独立编译，需另行挂载 media3 源码
+#  media3 fork 中与构建无关的大体积内容
 # ============================================================
-media/
+# 上游单元测试的媒体样本（504MB，assemble 用不到）
+media/libraries/test_data/
+# 上游示例工程（settings.gradle 中已注释，不参与构建）
+media/demos/
+media/testapps/
+media/docsamples/
 
 # ============================================================
 #  本地 Maven 仓库产物（构建时自动填充）

@@ -50,8 +50,9 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      # GitHub ubuntu-latest runner 预装了 Android SDK（ANDROID_HOME 已指向
+      # /usr/local/lib/android/sdk），不要再用 setup-android 去 sdkmanager 装东西，
+      # 否则会报 "Failed to find package 'tools'"。
 
       - name: Cache Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -60,22 +61,6 @@ jobs:
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
-
-      # 本仓库不跟踪 media3 fork 源码（体积大且属上游代码），
-      # 它单独放在 fhys-media3 仓库，构建前挂载到 media/ 目录。
-      # 可用仓库变量 MEDIA3_REPO 覆盖地址。
-      - name: Attach media3 fork
-        run: |
-          REPO="${{ vars.MEDIA3_REPO }}"
-          [ -z "$REPO" ] && REPO="https://github.com/300737/fhys-media3"
-          echo "Fetching media3 fork from $REPO"
-          rm -rf media
-          if ! git clone --depth 1 "$REPO" media; then
-            echo "::error::Cannot fetch media3 fork from $REPO."
-            echo "::error::Create that repo (push the local media/ dir) or set repo variable MEDIA3_REPO."
-            exit 1
-          fi
-          ls media
 
       # 签名密钥不入库。配置 Secret KEYSTORE_BASE64（base64 编码的 jks）后打 Release 包，
       # 未配置则退化为 Debug 包，保证流水线始终有产物。
