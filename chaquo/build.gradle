@@ -14,7 +14,12 @@ android {
         targetSdk libs.versions.targetSdk.get().toInteger()
         python {
             version = "3.10"
-            buildPython "C:/fongmi-src/py310_full/extracted/tools/python.exe"
+            // 本机专用解释器，仅在本机存在时使用；CI / 其它机器上留空，
+            // 让 Chaquopy 自动探测 PATH 上的 python（配合 workflow 里的 setup-python 3.10）。
+            def localBuildPython = "C:/fongmi-src/py310_full/extracted/tools/python.exe"
+            if (new File(localBuildPython).exists()) {
+                buildPython localBuildPython
+            }
             pip {
                 install("-r", "requirements.txt")
             }
