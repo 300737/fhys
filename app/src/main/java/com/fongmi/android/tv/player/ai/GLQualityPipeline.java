@@ -76,6 +76,10 @@ public final class GLQualityPipeline implements SurfaceTexture.OnFrameAvailableL
     private EGLDisplay eglDisplay = EGL14.EGL_NO_DISPLAY;
     private EGLContext eglContext = EGL14.EGL_NO_CONTEXT;
     private EGLSurface eglSurface = EGL14.EGL_NO_SURFACE;
+    private EGLConfig eglConfig;
+    /** 显示表面是否已挂载（解码器切换走之后才能挂载成功） */
+    private volatile boolean outputAttached;
+    private int attachRetries;
 
     private SurfaceTexture decoderTexture;
     private Surface decoderSurface;
@@ -134,13 +138,51 @@ public final class GLQualityPipeline implements SurfaceTexture.OnFrameAvailableL
                 callback.onError();
                 return;
             }
-            Log.d(AiQuality.TAG, "pipeline ready | renderer=" + GLES30.glGetString(GLES30.GL_RENDERER)
-                    + " | eglSurface=" + outWidth + "x" + outHeight
-                    + " | fboBuffer=" + fboAllocWidth + "x" + fboAllocHeight
+            Log.d(AiQuality.TAG, "pipeline resources ready | renderer=" + GLES30.glGetString(GLES30.GL_RENDERER)
+                    + " | targetBuffer=" + dstWidth + "x" + dstHeight
                     + " | easuProg=" + easuProgram + " postProg=" + postProgram
                     + " | decoderSurface=" + decoderSurface);
+            // 先把解码器切到我们的 SurfaceTexture，旧的显示表面连接断开后才能挂载输出
             callback.onReady(decoderSurface);
+            glHandler.postDelayed(this::tryAttachOutput, 200);
         });
+    }
+
+    /**
+     * 挂载显示输出表面。此时解码器可能刚从显示表面断开（连接异步释放），
+     * 因此用重试兜底，成功后才开始真正的逐帧渲染。
+     */
+    private void tryAttachOutput() {
+        if (released || outputAttached) return;
+        EGLSurface ws = EGL14.eglCreateWindowSurface(eglDisplay, eglConfig, outputSurface, new int[]{EGL14.EGL_NONE}, 0);
+        if (ws == EGL14.EGL_NO_SURFACE) {
+            if (++attachRetries <= 40) {
+                if (attachRetries == 1 || attachRetries % 10 == 0) {
+                    Log.w(AiQuality.TAG, "output surface busy (retry " + attachRetries
+                            + "), eglError=0x" + Integer.toHexString(EGL14.eglGetError()));
+                }
+                glHandler.postDelayed(this::tryAttachOutput, 200);
+                return;
+            }
+            Log.e(AiQuality.TAG, "attach output FAILED after retries, falling back");
+            cleanup();
+            callback.onError();
+            return;
+        }
+        if (eglSurface != EGL14.EGL_NO_SURFACE) EGL14.eglDestroySurface(eglDisplay, eglSurface);
+        eglSurface = ws;
+        if (!EGL14.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)) {
+            Log.e(AiQuality.TAG, "makeCurrent on output FAILED, eglError=0x" + Integer.toHexString(EGL14.eglGetError()));
+            cleanup();
+            callback.onError();
+            return;
+        }
+        int[] value = new int[1];
+        outWidth = EGL14.eglQuerySurface(eglDisplay, eglSurface, EGL_WIDTH, value, 0) && value[0] > 0 ? value[0] : dstWidth;
+        outHeight = EGL14.eglQuerySurface(eglDisplay, eglSurface, EGL_HEIGHT, value, 0) && value[0] > 0 ? value[0] : dstHeight;
+        outputAttached = true;
+        Log.d(AiQuality.TAG, "display surface attached " + outWidth + "x" + outHeight
+                + " | retries=" + attachRetries);
     }
 
     /** 供 MediaCodec / ExoPlayer 作为解码输出目标，初始化完成前返回 null */
@@ -161,6 +203,13 @@ public final class GLQualityPipeline implements SurfaceTexture.OnFrameAvailableL
 
     // ---------------- EGL ----------------
 
+    /**
+     * 初始化 EGL：只建 display/config/context，并用 1x1 pbuffer 作为临时绘图面。
+     *
+     * <p>关键点：此时解码器仍连着显示 Surface（一个 Surface 只允许一个生产者），
+     * 直接对它建窗口表面必然 EGL_BAD_ALLOC（神盾实测 0x3003）。
+     * 所以先用 pbuffer 建 GL 资源并切解码器，等连接断开后再由 {@link #tryAttachOutput()} 挂载窗口表面。
+     */
     private boolean initEgl() {
         eglDisplay = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY);
         if (eglDisplay == EGL14.EGL_NO_DISPLAY) return false;
@@ -168,6 +217,7 @@ public final class GLQualityPipeline implements SurfaceTexture.OnFrameAvailableL
         if (!EGL14.eglInitialize(eglDisplay, version, 0, version, 1)) return false;
 
         int[] attribs = {
+                EGL14.EGL_SURFACE_TYPE, EGL14.EGL_PBUFFER_BIT | EGL14.EGL_WINDOW_BIT,
                 EGL14.EGL_RED_SIZE, 8,
                 EGL14.EGL_GREEN_SIZE, 8,
                 EGL14.EGL_BLUE_SIZE, 8,
@@ -178,21 +228,22 @@ public final class GLQualityPipeline implements SurfaceTexture.OnFrameAvailableL
         EGLConfig[] configs = new EGLConfig[1];
         int[] numConfigs = new int[1];
         if (!EGL14.eglChooseConfig(eglDisplay, attribs, 0, configs, 0, 1, numConfigs, 0) || numConfigs[0] == 0) return false;
+        eglConfig = configs[0];
 
         int[] ctxAttribs = {EGL_CONTEXT_CLIENT_VERSION, 3, EGL14.EGL_NONE};
         eglContext = EGL14.eglCreateContext(eglDisplay, configs[0], EGL14.EGL_NO_CONTEXT, ctxAttribs, 0);
         if (eglContext == EGL14.EGL_NO_CONTEXT) return false;
 
-        int[] surfAttribs = {EGL14.EGL_NONE};
-        eglSurface = EGL14.eglCreateWindowSurface(eglDisplay, configs[0], outputSurface, surfAttribs, 0);
+        // 1x1 pbuffer：仅为让上下文可用（创建纹理/着色器需要 current context）
+        int[] pbAttribs = {EGL14.EGL_WIDTH, 1, EGL14.EGL_HEIGHT, 1, EGL14.EGL_NONE};
+        eglSurface = EGL14.eglCreatePbufferSurface(eglDisplay, configs[0], pbAttribs, 0);
         if (eglSurface == EGL14.EGL_NO_SURFACE) return false;
 
         if (!EGL14.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)) return false;
 
-        // 查询屏幕实际尺寸：当缓冲大于屏幕时（伪 4K），用它作为上屏视口，避免画面被裁切
-        int[] value = new int[1];
-        outWidth = EGL14.eglQuerySurface(eglDisplay, eglSurface, EGL_WIDTH, value, 0) && value[0] > 0 ? value[0] : dstWidth;
-        outHeight = EGL14.eglQuerySurface(eglDisplay, eglSurface, EGL_HEIGHT, value, 0) && value[0] > 0 ? value[0] : dstHeight;
+        // 显示表面挂载前，先用目标缓冲尺寸占位
+        outWidth = dstWidth;
+        outHeight = dstHeight;
         return true;
     }
 
@@ -297,7 +348,8 @@ public final class GLQualityPipeline implements SurfaceTexture.OnFrameAvailableL
     private void draw() {
         if (released || !frameAvailable) return;
         frameAvailable = false;
-        if (eglDisplay == EGL14.EGL_NO_DISPLAY || eglContext == EGL14.EGL_NO_CONTEXT) return;
+        // 输出表面还没挂上（解码器刚切换走），先不消费帧，避免 updateTexImage 丢帧后黑屏
+        if (!outputAttached || eglDisplay == EGL14.EGL_NO_DISPLAY || eglContext == EGL14.EGL_NO_CONTEXT) return;
         try {
             // 档位变化时逐帧自适应（切档下一帧立即生效，无需重建 EGL/管线，不闪屏）
             updatePassSize();
