@@ -1,5 +1,6 @@
 package com.fongmi.android.tv.player.ai;
 
+import android.os.Handler;
 import android.os.Looper;
 import android.view.Surface;
 import android.view.SurfaceHolder;
@@ -32,9 +33,17 @@ public class AiQualitySurface implements SurfaceHolder.Callback, GLQualityPipeli
 
     private final PlayerView view;
     private final Player player;
+    /**
+     * media3 的 Player 只能在创建它的线程（主线程）访问，否则抛
+     * "Player is accessed on the wrong thread"。
+     * 管线的初始化回调发生在 GL 线程，所以这里统一用主线程 Handler 转发。
+     */
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     private SurfaceView surfaceView;
     private GLQualityPipeline pipeline;
+    /** 已释放标记：防止 GL 线程晚到的 onReady 把已释放的 Surface 塞给播放器 */
+    private volatile boolean released;
 
     private AiQualitySurface(@NonNull PlayerView view, @NonNull Player player) {
         this.view = view;
@@ -78,6 +87,7 @@ public class AiQualitySurface implements SurfaceHolder.Callback, GLQualityPipeli
     }
 
     public void release() {
+        released = true;
         if (surfaceView != null) {
             surfaceView.getHolder().removeCallback(this);
             surfaceView = null;
@@ -128,16 +138,20 @@ public class AiQualitySurface implements SurfaceHolder.Callback, GLQualityPipeli
 
     @Override
     public void onReady(@NonNull Surface decoderSurface) {
-        if (!player.isCommandAvailable(Player.COMMAND_SET_VIDEO_SURFACE)) {
-            fallback();
-            return;
-        }
-        player.setVideoSurface(decoderSurface);
+        // 初始化完成回调发生在 GL 线程；Player 只能在主线程访问，必须切换
+        mainHandler.post(() -> {
+            if (released || surfaceView == null) return;
+            if (!player.isCommandAvailable(Player.COMMAND_SET_VIDEO_SURFACE)) {
+                fallback();
+                return;
+            }
+            player.setVideoSurface(decoderSurface);
+        });
     }
 
     @Override
     public void onError() {
-        fallback();
+        mainHandler.post(this::fallback);
     }
 
     private void releasePipeline() {
