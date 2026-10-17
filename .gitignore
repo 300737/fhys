@@ -41,7 +41,7 @@ lib-*.aar
 #  media3 fork 中与构建无关的大体积内容
 # ============================================================
 # 上游单元测试的媒体样本（504MB，assemble 用不到）
-media/libraries/test_data/
+media/libraries/test_data/src/
 # 上游示例工程（settings.gradle 中已注释，不参与构建）
 media/demos/
 media/testapps/

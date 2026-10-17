@@ -5,8 +5,13 @@ plugins {
 import java.text.SimpleDateFormat
 
 def localProps = new Properties()
-rootProject.file('local.properties').withInputStream {
-    localProps.load(it)
+def localPropsFile = rootProject.file('local.properties')
+// local.properties 含本机 SDK 路径与签名密钥，不入库；
+// CI 环境没有该文件，此处必须容错，缺失时签名等配置走下方 `?:` 默认值兜底。
+if (localPropsFile.exists()) {
+    localPropsFile.withInputStream {
+        localProps.load(it)
+    }
 }
 
 // 版本号单一事实来源：只在这里维护 VERSION_CODE，versionName 由它拼出，

@@ -50,9 +50,17 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # GitHub ubuntu-latest runner 预装了 Android SDK（ANDROID_HOME 已指向
-      # /usr/local/lib/android/sdk），不要再用 setup-android 去 sdkmanager 装东西，
-      # 否则会报 "Failed to find package 'tools'"。
+      # GitHub ubuntu-latest runner 预装了 Android SDK，但预装的平台版本不含
+      # android-37.0（新式 minor 命名）。不要用 android-actions/setup-android——
+      # 它跑 sdkmanager --install tools 会报 "Failed to find package 'tools'"。
+      - name: Install SDK platform 37.0
+        run: |
+          SDKM="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          [ -x "$SDKM" ] || SDKM="$(command -v sdkmanager)"
+          echo "Using sdkmanager: $SDKM"
+          yes | "$SDKM" --licenses > /dev/null 2>&1 || true
+          "$SDKM" --install "platforms;android-37.0" "build-tools;37.0.0" 2>&1 | tail -5
+          ls "$ANDROID_HOME/platforms"
 
       - name: Cache Gradle
         uses: gradle/actions/setup-gradle@v4
