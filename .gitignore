@@ -34,6 +34,9 @@ lib-*.aar
 # media3 fork 自带的 ffmpeg 软解运行时库，打包必需，必须放行
 !media/libraries/decoder_ffmpeg/src/main/jniLibs/**/*.so
 
+# app 主源集的运行时库（ffmpeg JNI / ijkplayer / AVS3 / Ambeo 3D 音频），必须放行
+!app/src/main/jniLibs/**/*.so
+
 # ============================================================
 #  media3 fork 中与构建无关的大体积内容
 # ============================================================
