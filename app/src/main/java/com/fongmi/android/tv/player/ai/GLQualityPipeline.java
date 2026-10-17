@@ -11,6 +11,7 @@ import android.opengl.GLES11Ext;
 import android.opengl.GLES30;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.util.Log;
 import android.view.Surface;
 
 import androidx.annotation.NonNull;
@@ -18,6 +19,7 @@ import androidx.annotation.NonNull;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
+import java.util.Locale;
 
 /**
  * 软件自研画质 GL 渲染管线（运行在独立 GL 线程）。
@@ -100,6 +102,11 @@ public final class GLQualityPipeline implements SurfaceTexture.OnFrameAvailableL
     private int passWidth = 1;
     private int passHeight = 1;
 
+    // ---- 调试埋点：每 2 秒汇总一次真实处理量 ----
+    private long frameCount;
+    private long lastLogNanos;
+    private long loggedFrames;
+
     public GLQualityPipeline(@NonNull Surface output, int dstW, int dstH, @NonNull Callback callback) {
         this.outputSurface = output;
         this.dstWidth = Math.max(1, dstW);
@@ -115,10 +122,23 @@ public final class GLQualityPipeline implements SurfaceTexture.OnFrameAvailableL
         glHandler.post(() -> {
             if (released) return;
             if (!initEgl() || !initGl()) {
+                Log.e(AiQuality.TAG, "pipeline init FAILED, eglError=0x"
+                        + Integer.toHexString(EGL14.eglGetError())
+                        + " glError=0x" + Integer.toHexString(GLES30.glGetError())
+                        + " | easuProg=" + easuProgram + " postProg=" + postProgram
+                        + " | display=" + (eglDisplay != EGL14.EGL_NO_DISPLAY)
+                        + " ctx=" + (eglContext != EGL14.EGL_NO_CONTEXT)
+                        + " surf=" + (eglSurface != EGL14.EGL_NO_SURFACE)
+                        + ", falling back to direct decode output");
                 cleanup();
                 callback.onError();
                 return;
             }
+            Log.d(AiQuality.TAG, "pipeline ready | renderer=" + GLES30.glGetString(GLES30.GL_RENDERER)
+                    + " | eglSurface=" + outWidth + "x" + outHeight
+                    + " | fboBuffer=" + fboAllocWidth + "x" + fboAllocHeight
+                    + " | easuProg=" + easuProgram + " postProg=" + postProgram
+                    + " | decoderSurface=" + decoderSurface);
             callback.onReady(decoderSurface);
         });
     }
@@ -258,6 +278,8 @@ public final class GLQualityPipeline implements SurfaceTexture.OnFrameAvailableL
         int[] status = new int[1];
         GLES30.glGetShaderiv(shader, GLES30.GL_COMPILE_STATUS, status, 0);
         if (status[0] == 0) {
+            String info = GLES30.glGetShaderInfoLog(shader);
+            Log.e(AiQuality.TAG, "shader compile failed (type=" + type + "): " + info);
             GLES30.glDeleteShader(shader);
             return 0;
         }
@@ -284,9 +306,34 @@ public final class GLQualityPipeline implements SurfaceTexture.OnFrameAvailableL
             renderEasu();
             renderPost();
             EGL14.eglSwapBuffers(eglDisplay, eglSurface);
-        } catch (Exception ignored) {
-            // 单帧异常不打断播放
+            logFrame();
+        } catch (Exception e) {
+            Log.w(AiQuality.TAG, "frame draw failed: " + e);
         }
+    }
+
+    /** 每 2 秒打一条，证明着色器真的在逐帧处理（含帧号、档位、各 pass 实际尺寸、实测帧率） */
+    private void logFrame() {
+        frameCount++;
+        long now = System.nanoTime();
+        if (lastLogNanos == 0) {
+            lastLogNanos = now;
+            return;
+        }
+        long span = now - lastLogNanos;
+        if (span < 2_000_000_000L) return;
+        double fps = (frameCount - loggedFrames) * 1e9 / span;
+        Log.d(AiQuality.TAG, "processed | frames=" + frameCount
+                + " | mode=" + AiQuality.getLevelName()
+                + " | src=" + srcWidth + "x" + srcHeight
+                + " | pass1(EASU)=" + passWidth + "x" + passHeight
+                + " | pass2(CAS)=" + outWidth + "x" + outHeight
+                + " | upscale=" + AiQuality.needUpscale()
+                + " | sharp=" + (AiQuality.needSharpen() ? AiQuality.getSharpness() : 0f)
+                + " | denoise=" + (AiQuality.needEnhance() ? AiQuality.getDenoise() : 0f)
+                + " | fps=" + String.format(Locale.US, "%.1f", fps));
+        lastLogNanos = now;
+        loggedFrames = frameCount;
     }
 
     /**
@@ -335,6 +382,9 @@ public final class GLQualityPipeline implements SurfaceTexture.OnFrameAvailableL
         GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
         GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, fboTexId);
         GLES30.glUniform1i(GLES30.glGetUniformLocation(postProgram, "uTexture"), 0);
+        // Pass2 采样的是自己写入的 FBO，uv 就是几何坐标本身，必须用单位矩阵
+        // （若沿用解码 OES 变换矩阵，翻转/裁切会被应用两次导致画面错乱）
+        android.opengl.Matrix.setIdentityM(texMatrix, 0);
         GLES30.glUniformMatrix4fv(GLES30.glGetUniformLocation(postProgram, "uTexMatrix"), 1, false, texMatrix, 0);
         // 采样区只覆盖 Pass1 实际渲染到的部分（增强档只用了 FBO 左上角的源尺寸区域）
         GLES30.glUniform2f(GLES30.glGetUniformLocation(postProgram, "uUvScale"),

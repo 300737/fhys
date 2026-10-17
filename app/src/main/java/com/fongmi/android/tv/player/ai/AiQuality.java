@@ -1,5 +1,7 @@
 package com.fongmi.android.tv.player.ai;
 
+import android.util.Log;
+
 import com.github.catvod.utils.Prefers;
 
 /**
@@ -18,6 +20,9 @@ import com.github.catvod.utils.Prefers;
  * </ul>
  */
 public class AiQuality {
+
+    /** 日志 tag，抓 logcat 时用 `adb logcat -s AI-Quality` */
+    public static final String TAG = "AI-Quality";
 
     /** 基本（原画模式） */
     public static final int BASIC = 0;
@@ -45,6 +50,20 @@ public class AiQuality {
 
     public static void putLevel(int level) {
         Prefers.put("ai_quality_level", Math.max(BASIC, Math.min(AI, level)));
+        Log.d(TAG, "switch level -> " + getLevelName()
+                + " | upscale=" + needUpscale() + " sharpen=" + needSharpen() + " denoise=" + needEnhance());
+    }
+
+    /** 当前档位的可读名称 */
+    public static String getLevelName() {
+        switch (getLevel()) {
+            case ENHANCE:
+                return "ENHANCE(CAS锐化)";
+            case AI:
+                return "AI(EASU超分+CAS)";
+            default:
+                return "BASIC(原画直出)";
+        }
     }
 
     /** 锐化强度 0.0 ~ 1.0，默认 0.5 */
@@ -54,6 +73,7 @@ public class AiQuality {
 
     public static void putSharpness(int percent) {
         Prefers.put("ai_quality_sharpness", Math.max(0, Math.min(100, percent)));
+        Log.d(TAG, "sharpness -> " + percent + "%");
     }
 
     /** 降噪强度 0.0 ~ 1.0，默认 0.3（过强会糊掉细节） */
@@ -63,6 +83,7 @@ public class AiQuality {
 
     public static void putDenoise(int percent) {
         Prefers.put("ai_quality_denoise", Math.max(0, Math.min(100, percent)));
+        Log.d(TAG, "denoise -> " + percent + "%");
     }
 
     /** 是否需要执行 EASU 超分 pass（仅 AI 增强档） */

@@ -14,7 +14,7 @@ package com.fongmi.android.tv.player.ai;
  */
 public final class Shaders {
 
-    /** 顶点着色器：全屏三角带，同时输出 OES 采样坐标 */
+    /** 顶点着色器：全屏三角带。uTexMatrix 传解码变换矩阵（采样 OES 用）或单位阵（采样 FBO 用） */
     public static final String VERT = "#version 300 es\n"
             + "in vec4 aPosition;\n"
             + "in vec4 aTexCoord;\n"
@@ -118,8 +118,8 @@ public final class Shaders {
             + "  vec3 inv = 1.0 - mx;\n"
             + "  float amp = clamp(min(peak, min(inv.r, min(inv.g, inv.b))), 0.0, 1.0);\n"
             + "  // 对比度越低（平坦）锐化越狠，高对比边缘收敛\n"
-            + "  float w = amp * (1.0 - clamp(abs(luma(mx) - luma(mn)) * 2.0, 0.0, 1.0));\n"
-            + "  col += (col - blur) * uSharpness * (0.5 + w);\n"
+            + "  float casW = amp * (1.0 - clamp(abs(luma(mx) - luma(mn)) * 2.0, 0.0, 1.0));\n"
+            + "  col += (col - blur) * uSharpness * (0.5 + casW);\n"
             + "\n"
             + "  // ---- 3. 色彩与动态范围增强（仅 ENHANCE 档） ----\n"
             + "  if (uEnhance > 0.5) {\n"

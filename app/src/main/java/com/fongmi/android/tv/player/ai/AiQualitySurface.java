@@ -2,6 +2,7 @@ package com.fongmi.android.tv.player.ai;
 
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -118,6 +119,8 @@ public class AiQualitySurface implements SurfaceHolder.Callback, GLQualityPipeli
             width = 3840;
             height = 2160;
         }
+        Log.d(AiQuality.TAG, "start pipeline | mode=" + AiQuality.getLevelName()
+                + " | targetBuffer=" + width + "x" + height + " | surface=" + output);
         pipeline = new GLQualityPipeline(output, width, height, this);
         VideoSize size = player.getVideoSize();
         if (size != null && size.width > 0 && size.height > 0) pipeline.setSource(size.width, size.height);
@@ -142,10 +145,12 @@ public class AiQualitySurface implements SurfaceHolder.Callback, GLQualityPipeli
         mainHandler.post(() -> {
             if (released || surfaceView == null) return;
             if (!player.isCommandAvailable(Player.COMMAND_SET_VIDEO_SURFACE)) {
+                Log.w(AiQuality.TAG, "COMMAND_SET_VIDEO_SURFACE unavailable, fallback");
                 fallback();
                 return;
             }
             player.setVideoSurface(decoderSurface);
+            Log.d(AiQuality.TAG, "decoder output hijacked -> pipeline OES surface (ALL frames now go through shaders)");
         });
     }
 
