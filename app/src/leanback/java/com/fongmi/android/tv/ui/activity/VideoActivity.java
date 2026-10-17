@@ -1432,6 +1432,8 @@ public class VideoActivity extends PlaybackActivity implements CustomKeyDownVod.
             case Player.STATE_READY:
                 hideProgress();
                 player().reset();
+                // 起播就绪后再兜底挂载画质管线（startPlayer 阶段 player 可能尚未就绪）
+                updateAiQuality();
                 break;
             case Player.STATE_ENDED:
                 checkEnded(true);

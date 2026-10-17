@@ -1530,6 +1530,8 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
                 checkControl();
                 player().reset();
                 mBinding.control.resolution.setText(player().getSizeText());
+                // 起播就绪后再兜底挂载画质管线（startPlayer 阶段 player 可能尚未就绪）
+                updateAiQuality();
                 break;
             case Player.STATE_ENDED:
                 checkEnded(true);

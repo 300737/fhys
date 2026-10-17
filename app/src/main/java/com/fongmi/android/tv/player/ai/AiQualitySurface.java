@@ -53,7 +53,12 @@ public class AiQualitySurface implements SurfaceHolder.Callback, GLQualityPipeli
 
     /** 画质开关关闭或条件不满足时返回 null，调用方无需额外判断 */
     public static AiQualitySurface attach(PlayerView view, Player player) {
-        if (view == null || player == null || !AiQuality.isEnabled()) return null;
+        if (view == null || player == null || !AiQuality.isEnabled()) {
+            Log.d(AiQuality.TAG, "attach skipped | view=" + (view != null)
+                    + " player=" + (player != null)
+                    + " enabled=" + AiQuality.isEnabled());
+            return null;
+        }
         AiQualitySurface holder = new AiQualitySurface(view, player);
         return holder.bind() ? holder : null;
     }
