@@ -138,6 +138,7 @@ public class AiQualitySurface implements SurfaceHolder.Callback, GLQualityPipeli
 
     @Override
     public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
+        Log.d(AiQuality.TAG, "surfaceDestroyed -> release pipeline, restore direct output");
         releasePipeline();
         if (player.isCommandAvailable(Player.COMMAND_SET_VIDEO_SURFACE)) player.clearVideoSurface();
     }

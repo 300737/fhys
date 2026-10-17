@@ -108,6 +108,7 @@ public final class GLQualityPipeline implements SurfaceTexture.OnFrameAvailableL
 
     // ---- 调试埋点：每 2 秒汇总一次真实处理量 ----
     private long frameCount;
+    private long decoderFrameCount;
     private long lastLogNanos;
     private long loggedFrames;
 
@@ -342,6 +343,10 @@ public final class GLQualityPipeline implements SurfaceTexture.OnFrameAvailableL
     @Override
     public void onFrameAvailable(SurfaceTexture st) {
         frameAvailable = true;
+        // 调试：每 100 帧打一条，确认解码器真的把帧送进了 SurfaceTexture
+        if (++decoderFrameCount % 100 == 1) {
+            Log.d(AiQuality.TAG, "decoder frame arrived #" + decoderFrameCount);
+        }
         if (glHandler != null && !released) glHandler.post(this::draw);
     }
 
