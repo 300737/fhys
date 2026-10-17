@@ -1,0 +1,207 @@
+plugins {
+    alias libs.plugins.android.application
+}
+
+import java.text.SimpleDateFormat
+
+def localProps = new Properties()
+rootProject.file('local.properties').withInputStream {
+    localProps.load(it)
+}
+
+// 版本号单一事实来源：只在这里维护 VERSION_CODE，versionName 由它拼出，
+// MT管理器显示的 versionCode 与应用内"关于"页显示的版本名因此永远一致。
+def VERSION_CODE = 577
+def VERSION_BASE = "1.0"
+def VERSION_NAME = "${VERSION_BASE}.${VERSION_CODE}"
+
+// 每次构建注入真实时间（Asia/Shanghai），应用内版本行直接读取，无需手改。
+// 注意：Groovy 里对 SimpleDateFormat 用 .apply{} 会与 Android Plugin 的 apply 方法冲突，
+// 因此这里直接 setTimeZone。
+def sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.CHINA)
+sdf.setTimeZone(TimeZone.getTimeZone("Asia/Shanghai"))
+def BUILD_TIME = sdf.format(new Date())
+
+android {
+    namespace = 'com.fongmi.android.tv'
+
+    compileSdk libs.versions.compileSdk.get().toInteger()
+    compileSdkMinor 0
+
+    defaultConfig {
+        // 注意：applicationId 不在这里设置，改为在 productFlavors 里按 mode flavor 分别指定，
+        // 这样手机版与电视版包名不同，可同机共存、互不覆盖。
+        minSdk libs.versions.minSdk.get().toInteger()
+        targetSdk libs.versions.targetSdk.get().toInteger()
+        versionCode VERSION_CODE
+        versionName VERSION_NAME
+
+        buildConfigField "String", "VERSION_LABEL", "\"${VERSION_NAME}\""
+        buildConfigField "String", "BUILD_TIME", "\"${BUILD_TIME}\""
+
+        // 注意：不要在 defaultConfig 写 ndk { abiFilters ... }。
+        // 本工程用 flavorDimensions="abi" 按架构拆包，架构限定必须留在 productFlavors 里
+        // （arm64_v8a flavor 只留 arm64-v8a）。若在 defaultConfig 放宽成两个架构，
+        // 变体 armeabi_v7a 会把两套 so 都打进去，包从 103MB 涨到 141MB。
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments = ["room.schemaLocation": "$projectDir/schemas".toString(), "eventBusIndex": "com.fongmi.android.tv.event.EventIndex"]
+            }
+        }
+    }
+
+    // 注意：signingConfigs 必须声明在 productFlavors 之前。
+    // Groovy 按书写顺序求值，productFlavors 里的 signingConfigs.named('tv'/'mobile')
+    // 在签名配置尚未注册时会抛 "SigningConfig with name 'tv' not found"。
+    signingConfigs {
+        // 手机版（mobile flavor）签名
+        mobile {
+            storeFile rootProject.file(localProps['mobileStoreFile'] ?: 'tiantian_potian.keystore')
+            keyAlias localProps['mobileKeyAlias'] ?: 'potian'
+            storePassword localProps['mobileStorePassword'] ?: 'potian123'
+            // 修：原先这里误读 storePassword，导致 keyPassword 与 storePassword 一旦不同就签名失败。
+            keyPassword localProps['mobileKeyPassword'] ?: localProps['mobileStorePassword'] ?: 'potian123'
+        }
+        // 电视版（leanback flavor）签名
+        tv {
+            storeFile rootProject.file(localProps['tvStoreFile'] ?: localProps['storeFile'] ?: 'tvbox-test.jks')
+            keyAlias localProps['tvKeyAlias'] ?: localProps['keyAlias'] ?: 'tvbox'
+            storePassword localProps['tvStorePassword'] ?: localProps['storePassword'] ?: 'tvbox123'
+            keyPassword localProps['tvKeyPassword'] ?: localProps['keyPassword'] ?: localProps['storePassword'] ?: 'tvbox123'
+        }
+    }
+
+    flavorDimensions = ["mode", "abi"]
+
+    productFlavors {
+        leanback {
+            dimension "mode"
+            // 电视版独立包名
+            applicationId "com.potian.prosperity.tv"
+            // 电视版用 tvbox-test.jks 签名
+            signingConfig signingConfigs.tv
+        }
+        mobile {
+            dimension "mode"
+            // 手机版独立包名
+            applicationId "com.potian.prosperity"
+            // 手机版用 tiantian_potian.keystore 签名
+            signingConfig signingConfigs.mobile
+        }
+        arm64_v8a {
+            dimension "abi"
+            ndk { abiFilters "arm64-v8a" }
+        }
+        armeabi_v7a {
+            dimension "abi"
+            ndk { abiFilters "armeabi-v7a" }
+        }
+    }
+
+    buildFeatures {
+        buildConfig = true
+        viewBinding = true
+    }
+
+    buildTypes {
+        release {
+            // R8 + 资源压缩默认开启（正式发布形态）。
+            // 实测：未混淆 dex 合计 ~35MB，R8 后降到 ~4.5MB，出包 103MB -> ~89MB。
+            // 注意 shrinkResources 依赖 minifyEnabled=true 才真正生效，两者必须同时开，
+            // 否则 AGP 会报 "Resource shrinker requires minifyEnabled"。
+            //
+            // 日常快速调试包可临时关闭（避免 7-15 分钟的 R8 全量耗时）：
+            //   ./gradlew :app:assembleLeanbackArm64_v8aRelease -PdisableR8=true
+            // 本机物理内存仅 8GB，R8 需大堆，gradle.properties 里已降为 -Xmx4600m + SerialGC。
+            def disableR8 = project.hasProperty('disableR8') && project.property('disableR8') == 'true'
+            def r8On = !disableR8
+            minifyEnabled = r8On
+            shrinkResources = true
+            // 签名不在这里指定：productFlavors 里 mobile 用 signingConfigs.mobile、
+            // leanback 用 signingConfigs.tv。若在此处写死 signingConfig 会覆盖 flavor 级设置，
+            // 导致两个版本用同一证书，手机版新签名就装不上、也覆盖不了旧包。
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro', 'proguard-rules-media.pro'
+        }
+    }
+
+    configurations.configureEach {
+        exclude group: 'stax', module: 'stax-api'
+        exclude group: 'xpp3', module: 'xpp3'
+        exclude group: 'com.android.support'
+        exclude group: 'io.antmedia', module: 'rtmp-client'
+        resolutionStrategy {
+            force libs.okhttp
+        }
+    }
+
+    lint {
+        disable 'UnsafeOptInUsageError'
+        disable 'ExpiredTargetSdkVersion'
+    }
+
+    compileOptions {
+        coreLibraryDesugaringEnabled = true
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
+    }
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+androidComponents {
+    onVariants(selector().withBuildType('release')) { variant ->
+        def flavors = variant.productFlavors.collectEntries { [(it.first): it.second] }
+        def mode = flavors['mode'] ?: 'mode'
+        def abi = flavors['abi'] ?: 'abi'
+        // 输出重命名（按 mode-abi 命名）
+        variant.outputs.each { output ->
+            output.outputFileName.set("${mode}-${abi}.apk")
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: "libs", include: ["*.aar"])
+    implementation project(':catvod')
+    implementation project(':chaquo')
+    implementation project(':quickjs')
+    implementation libs.appcompat
+    implementation libs.lifecycle.service
+    implementation libs.media
+    implementation libs.bundles.media3
+    implementation libs.palette
+    implementation libs.recyclerview
+    implementation libs.room.runtime
+    implementation libs.splashscreen
+    implementation libs.swiperefreshlayout
+    implementation libs.viewpager2
+    implementation libs.android.gif.drawable
+    implementation libs.bundles.glide
+    implementation libs.bundles.jupnp
+    implementation libs.customactivityoncrash
+    implementation libs.eventbus
+    implementation libs.flexbox
+    implementation libs.rtmp.client
+    implementation libs.lottie
+    implementation libs.material
+    implementation libs.materialdesigncolors
+    implementation libs.nanohttpd
+    implementation libs.newpipeextractor
+    implementation libs.permissionx
+    implementation libs.simple.xml
+    implementation libs.textdrawable
+    leanbackImplementation libs.leanback
+    leanbackImplementation libs.androidautosize
+    mobileImplementation libs.biometric
+    mobileImplementation libs.zxing.android.embedded
+    annotationProcessor libs.room.compiler
+    annotationProcessor libs.eventbus.annotation.processor
+    annotationProcessor libs.glide.compiler
+    coreLibraryDesugaring libs.desugar
+    implementation 'com.github.Dimezis:BlurView:version-2.0.3'
+    implementation 'com.belerweb:pinyin4j:2.5.1'
+}

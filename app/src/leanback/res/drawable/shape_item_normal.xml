@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+
+    <!-- 常态：与首页搜索栏/工具栏一致的半透明白底 -->
+    <solid android:color="@color/nf_card" />
+
+    <corners android:radius="8dp" />
+
+    <padding
+        android:bottom="12dp"
+        android:left="16dp"
+        android:right="16dp"
+        android:top="12dp" />
+
+</shape>

@@ -1,0 +1,35 @@
+plugins {
+    alias libs.plugins.android.library
+}
+
+android {
+    namespace = 'com.fongmi.android.tv.quickjs'
+
+    compileSdk libs.versions.compileSdk.get().toInteger()
+    compileSdkMinor 0
+
+    defaultConfig {
+        minSdk libs.versions.minSdk.get().toInteger()
+        targetSdk libs.versions.targetSdk.get().toInteger()
+    }
+
+    compileOptions {
+        coreLibraryDesugaringEnabled = true
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
+    }
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+dependencies {
+    implementation project(':catvod')
+    implementation 'org.jsoup:jsoup:1.16.1'
+    implementation libs.quickjs.android
+    implementation libs.quickjs.java
+    coreLibraryDesugaring libs.desugar
+}

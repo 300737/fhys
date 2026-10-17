@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  首页顶栏遮罩：贴屏幕顶边最深，向下平滑过渡到完全透明。
+  顶栏整体压深、与内容区形成层次，底边是渐隐而不是硬边，
+  不会重演"顶栏单独用不透明渐变、与页面底渐变对不上"的上下色差问题。
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+
+    <gradient
+        android:angle="270"
+        android:centerColor="#6B110B2B"
+        android:centerY="0.70"
+        android:endColor="#00000000"
+        android:startColor="#D9100A28"
+        android:type="linear" />
+
+</shape>

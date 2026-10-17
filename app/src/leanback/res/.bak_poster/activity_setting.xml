@@ -1,0 +1,856 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <androidx.appcompat.widget.LinearLayoutCompat
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center_vertical"
+        android:orientation="vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp">
+
+        <!-- 第 1 行：点播配置 | 直播配置 -->
+        <androidx.appcompat.widget.LinearLayoutCompat
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:orientation="horizontal">
+
+            <androidx.appcompat.widget.LinearLayoutCompat
+                android:id="@+id/vod"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="@drawable/selector_cell"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.4"
+                    android:duplicateParentState="true"
+                    android:gravity="start|center_vertical"
+                    android:singleLine="true"
+                    android:text="@string/setting_vod"
+                    android:textColor="@color/cell_label_csl"
+                    android:textSize="14sp" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/vodUrl"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="0.6"
+                    android:duplicateParentState="true"
+                    android:ellipsize="middle"
+                    android:gravity="end"
+                    android:singleLine="true"
+                    android:textColor="@color/cell_value_csl"
+                    android:textSize="14sp"
+                    tools:text="https://" />
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:id="@+id/vodHome"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_marginStart="6dp"
+                    android:background="@drawable/selector_cell_icon"
+                    android:duplicateParentState="true"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:padding="7dp"
+                    android:src="@drawable/ic_setting_home"
+                    android:tint="@color/cell_icon_csl" />
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:id="@+id/vodHistory"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_marginStart="6dp"
+                    android:background="@drawable/selector_cell_icon"
+                    android:duplicateParentState="true"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:padding="7dp"
+                    android:src="@drawable/ic_setting_history"
+                    android:tint="@color/cell_icon_csl" />
+            </androidx.appcompat.widget.LinearLayoutCompat>
+
+            <android.widget.Space
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="0.5" />
+
+            <androidx.appcompat.widget.LinearLayoutCompat
+                android:id="@+id/live"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="@drawable/selector_cell"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.4"
+                    android:duplicateParentState="true"
+                    android:gravity="start|center_vertical"
+                    android:singleLine="true"
+                    android:text="@string/setting_live"
+                    android:textColor="@color/cell_label_csl"
+                    android:textSize="14sp" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/liveUrl"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="0.6"
+                    android:duplicateParentState="true"
+                    android:ellipsize="middle"
+                    android:gravity="end"
+                    android:singleLine="true"
+                    android:textColor="@color/cell_value_csl"
+                    android:textSize="14sp"
+                    tools:text="https://" />
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:id="@+id/liveHome"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_marginStart="6dp"
+                    android:background="@drawable/selector_cell_icon"
+                    android:duplicateParentState="true"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:padding="7dp"
+                    android:src="@drawable/ic_setting_home"
+                    android:tint="@color/cell_icon_csl" />
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:id="@+id/liveHistory"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_marginStart="6dp"
+                    android:background="@drawable/selector_cell_icon"
+                    android:duplicateParentState="true"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:padding="7dp"
+                    android:src="@drawable/ic_setting_history"
+                    android:tint="@color/cell_icon_csl" />
+            </androidx.appcompat.widget.LinearLayoutCompat>
+        </androidx.appcompat.widget.LinearLayoutCompat>
+
+        <!-- 第 2 行：壁纸 | 播放器 -->
+        <androidx.appcompat.widget.LinearLayoutCompat
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal">
+
+            <androidx.appcompat.widget.LinearLayoutCompat
+                android:id="@+id/wall"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="@drawable/selector_cell"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.4"
+                    android:duplicateParentState="true"
+                    android:gravity="start|center_vertical"
+                    android:singleLine="true"
+                    android:text="@string/setting_wall"
+                    android:textColor="@color/cell_label_csl"
+                    android:textSize="14sp" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/wallUrl"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="0.6"
+                    android:duplicateParentState="true"
+                    android:ellipsize="middle"
+                    android:gravity="end"
+                    android:singleLine="true"
+                    android:textColor="@color/cell_value_csl"
+                    android:textSize="14sp"
+                    tools:text="https://" />
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:id="@+id/wallDefault"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_marginStart="6dp"
+                    android:background="@drawable/selector_cell_icon"
+                    android:duplicateParentState="true"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:padding="7dp"
+                    android:src="@drawable/ic_setting_home"
+                    android:tint="@color/cell_icon_csl" />
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:id="@+id/wallRefresh"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_marginStart="6dp"
+                    android:background="@drawable/selector_cell_icon"
+                    android:duplicateParentState="true"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:padding="7dp"
+                    android:src="@drawable/ic_setting_refresh"
+                    android:tint="@color/cell_icon_csl" />
+            </androidx.appcompat.widget.LinearLayoutCompat>
+
+            <android.widget.Space
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="0.5" />
+
+            <androidx.appcompat.widget.LinearLayoutCompat
+                android:id="@+id/player"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="@drawable/selector_cell"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.6"
+                    android:duplicateParentState="true"
+                    android:gravity="start|center_vertical"
+                    android:singleLine="true"
+                    android:text="@string/setting_player"
+                    android:textColor="@color/cell_label_csl"
+                    android:textSize="14sp" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="0.4"
+                    android:duplicateParentState="true"
+                    android:gravity="end"
+                    android:singleLine="true"
+                    android:text="设置"
+                    android:textColor="@color/cell_value_csl"
+                    android:textSize="14sp" />
+            </androidx.appcompat.widget.LinearLayoutCompat>
+        </androidx.appcompat.widget.LinearLayoutCompat>
+
+        <!-- 第 3 行：弹幕 | 无痕模式 -->
+        <androidx.appcompat.widget.LinearLayoutCompat
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal">
+
+            <androidx.appcompat.widget.LinearLayoutCompat
+                android:id="@+id/danmaku"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="@drawable/selector_cell"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.6"
+                    android:duplicateParentState="true"
+                    android:gravity="start|center_vertical"
+                    android:singleLine="true"
+                    android:text="@string/setting_danmaku"
+                    android:textColor="@color/cell_label_csl"
+                    android:textSize="14sp" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="0.4"
+                    android:duplicateParentState="true"
+                    android:gravity="end"
+                    android:singleLine="true"
+                    android:text="设置"
+                    android:textColor="@color/cell_value_csl"
+                    android:textSize="14sp" />
+            </androidx.appcompat.widget.LinearLayoutCompat>
+
+            <android.widget.Space
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="0.5" />
+
+            <androidx.appcompat.widget.LinearLayoutCompat
+                android:id="@+id/incognito"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="@drawable/selector_cell"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.6"
+                    android:duplicateParentState="true"
+                    android:gravity="start|center_vertical"
+                    android:singleLine="true"
+                    android:text="@string/setting_incognito"
+                    android:textColor="@color/cell_label_csl"
+                    android:textSize="14sp" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/incognitoText"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="0.4"
+                    android:duplicateParentState="true"
+                    android:gravity="end"
+                    android:singleLine="true"
+                    android:textColor="@color/cell_value_csl"
+                    android:textSize="14sp"
+                    tools:text="关" />
+            </androidx.appcompat.widget.LinearLayoutCompat>
+        </androidx.appcompat.widget.LinearLayoutCompat>
+
+        <!-- 第 4 行：主页设置 | 开机自启 -->
+        <androidx.appcompat.widget.LinearLayoutCompat
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal">
+
+            <androidx.appcompat.widget.LinearLayoutCompat
+                android:id="@+id/home"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="@drawable/selector_cell"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.6"
+                    android:duplicateParentState="true"
+                    android:gravity="start|center_vertical"
+                    android:singleLine="true"
+                    android:text="@string/setting_home"
+                    android:textColor="@color/cell_label_csl"
+                    android:textSize="14sp" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="0.4"
+                    android:duplicateParentState="true"
+                    android:gravity="end"
+                    android:singleLine="true"
+                    android:text="设置"
+                    android:textColor="@color/cell_value_csl"
+                    android:textSize="14sp" />
+            </androidx.appcompat.widget.LinearLayoutCompat>
+
+            <android.widget.Space
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="0.5" />
+
+            <androidx.appcompat.widget.LinearLayoutCompat
+                android:id="@+id/live_boot"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="@drawable/selector_cell"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.6"
+                    android:duplicateParentState="true"
+                    android:gravity="start|center_vertical"
+                    android:singleLine="true"
+                    android:text="@string/setting_live_boot"
+                    android:textColor="@color/cell_label_csl"
+                    android:textSize="14sp" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/liveBootText"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="0.4"
+                    android:duplicateParentState="true"
+                    android:gravity="end"
+                    android:singleLine="true"
+                    android:textColor="@color/cell_value_csl"
+                    android:textSize="14sp"
+                    tools:text="关" />
+            </androidx.appcompat.widget.LinearLayoutCompat>
+        </androidx.appcompat.widget.LinearLayoutCompat>
+
+        <!-- 第 5 行：图片尺寸 | 搜索排列 -->
+        <androidx.appcompat.widget.LinearLayoutCompat
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal">
+
+            <androidx.appcompat.widget.LinearLayoutCompat
+                android:id="@+id/size"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="@drawable/selector_cell"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.6"
+                    android:duplicateParentState="true"
+                    android:gravity="start|center_vertical"
+                    android:singleLine="true"
+                    android:text="@string/setting_size"
+                    android:textColor="@color/cell_label_csl"
+                    android:textSize="14sp" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/sizeText"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="0.4"
+                    android:duplicateParentState="true"
+                    android:gravity="end"
+                    android:singleLine="true"
+                    android:textColor="@color/cell_value_csl"
+                    android:textSize="14sp"
+                    tools:text="中" />
+            </androidx.appcompat.widget.LinearLayoutCompat>
+
+            <android.widget.Space
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="0.5" />
+
+            <androidx.appcompat.widget.LinearLayoutCompat
+                android:id="@+id/search"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="@drawable/selector_cell"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.6"
+                    android:duplicateParentState="true"
+                    android:gravity="start|center_vertical"
+                    android:singleLine="true"
+                    android:text="@string/setting_search"
+                    android:textColor="@color/cell_label_csl"
+                    android:textSize="14sp" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/searchText"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="0.4"
+                    android:duplicateParentState="true"
+                    android:gravity="end"
+                    android:singleLine="true"
+                    android:textColor="@color/cell_value_csl"
+                    android:textSize="14sp"
+                    tools:text="横向" />
+            </androidx.appcompat.widget.LinearLayoutCompat>
+        </androidx.appcompat.widget.LinearLayoutCompat>
+
+        <!-- 第 6 行：安全DNS | 豆瓣接口 -->
+        <androidx.appcompat.widget.LinearLayoutCompat
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal">
+
+            <androidx.appcompat.widget.LinearLayoutCompat
+                android:id="@+id/doh"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="@drawable/selector_cell"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.5"
+                    android:duplicateParentState="true"
+                    android:gravity="start|center_vertical"
+                    android:singleLine="true"
+                    android:text="@string/setting_doh"
+                    android:textColor="@color/cell_label_csl"
+                    android:textSize="14sp" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/dohText"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="0.5"
+                    android:duplicateParentState="true"
+                    android:ellipsize="end"
+                    android:gravity="end"
+                    android:singleLine="true"
+                    android:textColor="@color/cell_value_csl"
+                    android:textSize="14sp"
+                    tools:text="Google" />
+            </androidx.appcompat.widget.LinearLayoutCompat>
+
+            <android.widget.Space
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="0.5" />
+
+            <androidx.appcompat.widget.LinearLayoutCompat
+                android:id="@+id/douban"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="@drawable/selector_cell"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.5"
+                    android:duplicateParentState="true"
+                    android:gravity="start|center_vertical"
+                    android:singleLine="true"
+                    android:text="@string/setting_douban"
+                    android:textColor="@color/cell_label_csl"
+                    android:textSize="14sp" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/doubanText"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="0.5"
+                    android:duplicateParentState="true"
+                    android:ellipsize="end"
+                    android:gravity="end"
+                    android:singleLine="true"
+                    android:textColor="@color/cell_value_csl"
+                    android:textSize="14sp"
+                    tools:text="https://" />
+            </androidx.appcompat.widget.LinearLayoutCompat>
+        </androidx.appcompat.widget.LinearLayoutCompat>
+
+        <!-- 第 7 行：数据备份 | 数据恢复 -->
+        <androidx.appcompat.widget.LinearLayoutCompat
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal">
+
+            <androidx.appcompat.widget.LinearLayoutCompat
+                android:id="@+id/backup"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="@drawable/selector_cell"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.6"
+                    android:duplicateParentState="true"
+                    android:gravity="start|center_vertical"
+                    android:singleLine="true"
+                    android:text="数据备份"
+                    android:textColor="@color/cell_label_csl"
+                    android:textSize="14sp" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="0.4"
+                    android:duplicateParentState="true"
+                    android:gravity="end"
+                    android:singleLine="true"
+                    android:text="@string/setting_backup"
+                    android:textColor="@color/cell_value_csl"
+                    android:textSize="14sp" />
+            </androidx.appcompat.widget.LinearLayoutCompat>
+
+            <android.widget.Space
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="0.5" />
+
+            <androidx.appcompat.widget.LinearLayoutCompat
+                android:id="@+id/restore"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="@drawable/selector_cell"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.6"
+                    android:duplicateParentState="true"
+                    android:gravity="start|center_vertical"
+                    android:singleLine="true"
+                    android:text="数据恢复"
+                    android:textColor="@color/cell_label_csl"
+                    android:textSize="14sp" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="0.4"
+                    android:duplicateParentState="true"
+                    android:gravity="end"
+                    android:singleLine="true"
+                    android:text="@string/setting_restore"
+                    android:textColor="@color/cell_value_csl"
+                    android:textSize="14sp" />
+            </androidx.appcompat.widget.LinearLayoutCompat>
+        </androidx.appcompat.widget.LinearLayoutCompat>
+
+        <!-- 第 8 行：云端同步 | 缓存 -->
+        <androidx.appcompat.widget.LinearLayoutCompat
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal">
+
+            <androidx.appcompat.widget.LinearLayoutCompat
+                android:id="@+id/sync"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="@drawable/selector_cell"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.6"
+                    android:duplicateParentState="true"
+                    android:gravity="start|center_vertical"
+                    android:singleLine="true"
+                    android:text="@string/setting_sync"
+                    android:textColor="@color/cell_label_csl"
+                    android:textSize="14sp" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="0.4"
+                    android:duplicateParentState="true"
+                    android:gravity="end"
+                    android:singleLine="true"
+                    android:text="WebDAV"
+                    android:textColor="@color/cell_value_csl"
+                    android:textSize="14sp" />
+            </androidx.appcompat.widget.LinearLayoutCompat>
+
+            <android.widget.Space
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="0.5" />
+
+            <androidx.appcompat.widget.LinearLayoutCompat
+                android:id="@+id/cache"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="@drawable/selector_cell"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.6"
+                    android:duplicateParentState="true"
+                    android:gravity="start|center_vertical"
+                    android:singleLine="true"
+                    android:text="@string/setting_cache"
+                    android:textColor="@color/cell_label_csl"
+                    android:textSize="14sp" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/cacheText"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="0.4"
+                    android:duplicateParentState="true"
+                    android:gravity="end"
+                    android:singleLine="true"
+                    android:textColor="@color/cell_value_csl"
+                    android:textSize="14sp"
+                    tools:text="1.0 MB" />
+            </androidx.appcompat.widget.LinearLayoutCompat>
+        </androidx.appcompat.widget.LinearLayoutCompat>
+
+        <!-- 第 9 行：重载配置 | 版本 -->
+        <androidx.appcompat.widget.LinearLayoutCompat
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal">
+
+            <androidx.appcompat.widget.LinearLayoutCompat
+                android:id="@+id/reload"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="@drawable/selector_cell"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.6"
+                    android:duplicateParentState="true"
+                    android:gravity="start|center_vertical"
+                    android:singleLine="true"
+                    android:text="重载配置"
+                    android:textColor="@color/cell_label_csl"
+                    android:textSize="14sp" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="0.4"
+                    android:duplicateParentState="true"
+                    android:gravity="end"
+                    android:singleLine="true"
+                    android:text="刷新"
+                    android:textColor="@color/cell_value_csl"
+                    android:textSize="14sp" />
+            </androidx.appcompat.widget.LinearLayoutCompat>
+
+            <android.widget.Space
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="0.5" />
+
+            <androidx.appcompat.widget.LinearLayoutCompat
+                android:id="@+id/version"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="@drawable/selector_cell"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.6"
+                    android:duplicateParentState="true"
+                    android:gravity="start|center_vertical"
+                    android:singleLine="true"
+                    android:text="@string/setting_version"
+                    android:textColor="@color/cell_label_csl"
+                    android:textSize="14sp" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/versionText"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="0.4"
+                    android:duplicateParentState="true"
+                    android:gravity="end"
+                    android:singleLine="true"
+                    android:textColor="@color/cell_value_csl"
+                    android:textSize="14sp"
+                    tools:text="5.7.7" />
+            </androidx.appcompat.widget.LinearLayoutCompat>
+        </androidx.appcompat.widget.LinearLayoutCompat>
+    </androidx.appcompat.widget.LinearLayoutCompat>
+</androidx.core.widget.NestedScrollView>
