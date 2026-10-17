@@ -28,6 +28,9 @@ lib-*.aar
 # gradle wrapper 的 jar 是构建入口，必须放行
 !gradle/wrapper/gradle-wrapper.jar
 
+# app 硬依赖的自研模块预编译包（build.gradle 用 fileTree(libs) 引入），必须放行
+!app/libs/*.aar
+
 # media3 fork 自带的 ffmpeg 软解运行时库，打包必需，必须放行
 !media/libraries/decoder_ffmpeg/src/main/jniLibs/**/*.so
 
@@ -42,6 +45,5 @@ media/testapps/
 media/docsamples/
 
 # ============================================================
-#  本地 Maven 仓库产物（构建时自动填充）
+#  本地 Maven 仓库（settings.gradle 注册为依赖源，体积小，直接跟踪）
 # ============================================================
-third_party/
