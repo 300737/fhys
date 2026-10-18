@@ -94,6 +94,11 @@ public final class GLQualityPipeline implements SurfaceTexture.OnFrameAvailableL
     private final float[] texMatrix = new float[16];
     private volatile boolean released;
     private volatile boolean frameAvailable;
+    /**
+     * 等待输出挂载期间已消费但尚未渲染的帧。
+     * 挂载成功后立即补渲染这一帧，保证画面从切换瞬间无缝衔接、不黑屏不跳帧。
+     */
+    private boolean framePendingRender;
     private volatile int srcWidth = 1;
     private volatile int srcHeight = 1;
     /** FBO 纹理固定按显示尺寸分配一次，档位切换只改视口，不做重新分配（避免闪屏与额外开销） */
@@ -184,6 +189,19 @@ public final class GLQualityPipeline implements SurfaceTexture.OnFrameAvailableL
         outputAttached = true;
         Log.d(AiQuality.TAG, "display surface attached " + outWidth + "x" + outHeight
                 + " | retries=" + attachRetries);
+        // 挂载成功后立即补渲染等待期间消费的最后一帧，画面无缝衔接（不等下一个解码帧）
+        if (framePendingRender) {
+            framePendingRender = false;
+            glHandler.post(() -> {
+                if (released || !outputAttached) return;
+                try {
+                    renderFrame();
+                    Log.d(AiQuality.TAG, "pending frame rendered after attach (seamless hot-switch)");
+                } catch (Exception e) {
+                    Log.w(AiQuality.TAG, "pending frame render failed: " + e);
+                }
+            });
+        }
     }
 
     /** 供 MediaCodec / ExoPlayer 作为解码输出目标，初始化完成前返回 null */
@@ -353,20 +371,35 @@ public final class GLQualityPipeline implements SurfaceTexture.OnFrameAvailableL
     private void draw() {
         if (released || !frameAvailable) return;
         frameAvailable = false;
-        // 输出表面还没挂上（解码器刚切换走），先不消费帧，避免 updateTexImage 丢帧后黑屏
-        if (!outputAttached || eglDisplay == EGL14.EGL_NO_DISPLAY || eglContext == EGL14.EGL_NO_CONTEXT) return;
+        if (eglDisplay == EGL14.EGL_NO_DISPLAY || eglContext == EGL14.EGL_NO_CONTEXT || decoderTexture == null) return;
         try {
-            // 档位变化时逐帧自适应（切档下一帧立即生效，无需重建 EGL/管线，不闪屏）
-            updatePassSize();
+            if (!outputAttached) {
+                // 【热切换死锁修复】输出表面还没挂上时（解码器刚从屏幕切过来的等待窗口），
+                // 也必须立刻 updateTexImage 消费帧：SurfaceTexture 只有约 3 个缓冲位，
+                // 解码器持续送帧而消费端不取，几帧后解码器就被堵死——
+                // 表现正是"画面定格在切换瞬间的帧、声音照常继续"。
+                // 这里只消费不渲染，腾出缓冲让解码器继续跑，挂载完成后由补渲染上屏。
+                decoderTexture.updateTexImage();
+                decoderTexture.getTransformMatrix(texMatrix);
+                framePendingRender = true;
+                return;
+            }
+            framePendingRender = false;
             decoderTexture.updateTexImage();
             decoderTexture.getTransformMatrix(texMatrix);
-            renderEasu();
-            renderPost();
-            EGL14.eglSwapBuffers(eglDisplay, eglSurface);
-            logFrame();
+            renderFrame();
         } catch (Exception e) {
             Log.w(AiQuality.TAG, "frame draw failed: " + e);
         }
+    }
+
+    /** 用最近一次消费的解码帧走完整渲染并上屏（挂载完成后的补渲染也走这里） */
+    private void renderFrame() {
+        updatePassSize();
+        renderEasu();
+        renderPost();
+        EGL14.eglSwapBuffers(eglDisplay, eglSurface);
+        logFrame();
     }
 
     /** 每 2 秒打一条，证明着色器真的在逐帧处理（含帧号、档位、各 pass 实际尺寸、实测帧率） */

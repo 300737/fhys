@@ -14,12 +14,12 @@ on:
       flavors:
         description: 'Which flavors to build'
         required: false
-        default: 'leanback'
+        default: 'all'
         type: choice
         options:
+          - all
           - leanback
           - mobile
-          - all
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -34,11 +34,20 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # 手机版 + 电视版 × v7a + v8a，四个包全出
         include:
           - target: LeanbackArm64_v8a
             flavor: leanback
+            abi: arm64-v8a
+          - target: LeanbackArmeabi_v7a
+            flavor: leanback
+            abi: armeabi-v7a
           - target: MobileArm64_v8a
             flavor: mobile
+            abi: arm64-v8a
+          - target: MobileArmeabi_v7a
+            flavor: mobile
+            abi: armeabi-v7a
 
     steps:
       - name: Checkout
@@ -78,19 +87,30 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      # 签名密钥不入库。配置 Secret KEYSTORE_BASE64（base64 编码的 jks）后打 Release 包，
-      # 未配置则退化为 Debug 包，保证流水线始终有产物。
-      - name: Restore signing key
+      # 签名密钥不入库，两个 Secret 各管一版：
+      #   KEYSTORE_BASE64        → tvbox-test.jks          （电视版 leanback）
+      #   MOBILE_KEYSTORE_BASE64 → tiantian_potian.keystore（手机版 mobile）
+      # 某一版密钥未配置时该版退化为 Debug 包，保证流水线始终有产物。
+      - name: Restore signing keys
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          MOBILE_KEYSTORE_BASE64: ${{ secrets.MOBILE_KEYSTORE_BASE64 }}
         run: |
           if [ -n "$KEYSTORE_BASE64" ]; then
             echo "$KEYSTORE_BASE64" | base64 -d > tvbox-test.jks
-            echo "has_key=true" >> "$GITHUB_ENV"
-            echo "Signing key restored."
+            echo "has_tv_key=true" >> "$GITHUB_ENV"
+            echo "TV signing key restored."
           else
-            echo "has_key=false" >> "$GITHUB_ENV"
-            echo "No KEYSTORE_BASE64 secret, will build Debug instead."
+            echo "has_tv_key=false" >> "$GITHUB_ENV"
+            echo "No KEYSTORE_BASE64 secret, leanback will build Debug instead."
+          fi
+          if [ -n "$MOBILE_KEYSTORE_BASE64" ]; then
+            echo "$MOBILE_KEYSTORE_BASE64" | base64 -d > tiantian_potian.keystore
+            echo "has_mobile_key=true" >> "$GITHUB_ENV"
+            echo "Mobile signing key restored."
+          else
+            echo "has_mobile_key=false" >> "$GITHUB_ENV"
+            echo "No MOBILE_KEYSTORE_BASE64 secret, mobile will build Debug instead."
           fi
 
       - name: Resolve which flavors to build
@@ -98,10 +118,8 @@ jobs:
         run: |
           input="${{ github.event.inputs.flavors }}"
           flavor="${{ matrix.flavor }}"
-          if [ -z "$input" ]; then
-            # push / PR 自动触发：只构建电视版，避免 CI 跑太久
-            [ "$flavor" = "leanback" ] && echo "run=true" >> "$GITHUB_OUTPUT" || echo "run=false" >> "$GITHUB_OUTPUT"
-          elif [ "$input" = "all" ]; then
+          if [ -z "$input" ] || [ "$input" = "all" ]; then
+            # push / PR 自动触发：手机版 + 电视版全构建
             echo "run=true" >> "$GITHUB_OUTPUT"
           elif [ "$input" = "$flavor" ]; then
             echo "run=true" >> "$GITHUB_OUTPUT"
@@ -112,7 +130,12 @@ jobs:
       - name: Build ${{ matrix.target }}
         if: steps.pick.outputs.run == 'true'
         run: |
-          if [ "$has_key" = "true" ]; then
+          if [ "${{ matrix.flavor }}" = "leanback" ]; then
+            signed=$has_tv_key
+          else
+            signed=$has_mobile_key
+          fi
+          if [ "$signed" = "true" ]; then
             ./gradlew :app:assemble${{ matrix.target }}Release --no-daemon --stacktrace
           else
             ./gradlew :app:assemble${{ matrix.target }}Debug --no-daemon --stacktrace
@@ -122,7 +145,7 @@ jobs:
         if: steps.pick.outputs.run == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: apk-${{ matrix.flavor }}-arm64-v8a
+          name: apk-${{ matrix.flavor }}-${{ matrix.abi }}
           path: app/build/outputs/apk/**/*.apk
           if-no-files-found: warn
           retention-days: 30
