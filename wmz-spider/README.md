@@ -28,15 +28,20 @@ String className = "com.github.catvod.spider." + api.split("csp_")[1];
 
 | 文件 | 说明 |
 |---|---|
-| `spider.jar` | 编译产物（156 个 class），丢到配置同目录 |
-| `wmz-local.json` | 原配置，只改了一处：`"spider"` 指向 `./spider.jar` |
+| `spider.jar` | 编译产物（156 个 class） |
 | `spider-src/` | 全部源码 + `build.sh` |
+| `README.md` | 本文件 |
+
+包里不含任何配置文件——配置是你自己的，我这边一个字都不带。
 
 ## 怎么用
 
-1. `spider.jar` 和 `wmz-local.json` 放同一目录；
-2. TVBox 里填 `wmz-local.json` 的地址；
-3. 完事。
+1. 把 `spider.jar` 放到配置文件同目录（例如 `lib/` 或 json 同级）；
+2. 打开你自己的配置 json，把 `"spider"` 那一行改掉：
+   ```json
+   "spider": "./spider.jar"
+   ```
+3. TVBox 里重新加载配置，完事。
 
 ## 引擎
 
