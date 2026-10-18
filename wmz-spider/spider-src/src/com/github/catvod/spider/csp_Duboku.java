@@ -1,18 +1,5 @@
 package com.github.catvod.spider;
 
-/**
- * 🧿独播｜蓝光秒播
- * <p>
- * 配置里没有下发域名，接口交由通用引擎按 ext.site / ext.host 动态取；
- * 只要在 ext 里补上域名即可直接可用，无需改 jar。
- * <p>
- * 类名必须与配置 JSON 中 sites[].api 完全一致（一个萝卜一个坑），
- * 否则宿主反射实例化会直接报 ClassNotFoundException。
- */
-public class csp_Duboku extends MacCms {
-
-    @Override
-    protected String defaultHost() {
-        return "";
-    }
+/** Duboku 的别名（兼容按 csp_ 全名加载的分支） */
+public class csp_Duboku extends Duboku {
 }

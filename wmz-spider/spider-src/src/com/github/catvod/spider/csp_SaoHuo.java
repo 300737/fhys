@@ -1,17 +1,5 @@
 package com.github.catvod.spider;
 
-/**
- * 🔥Sao火丨蓝光影视
- * <p>
- * 接「苹果CMS V10」通用引擎，默认域名 https://shdy5.us。
- * <p>
- * 类名必须与配置 JSON 中 sites[].api 完全一致（一个萝卜一个坑），
- * 否则宿主反射实例化会直接报 ClassNotFoundException。
- */
-public class csp_SaoHuo extends MacCms {
-
-    @Override
-    protected String defaultHost() {
-        return "https://shdy5.us";
-    }
+/** SaoHuo 的别名（兼容按 csp_ 全名加载的分支） */
+public class csp_SaoHuo extends SaoHuo {
 }

@@ -1,70 +1,84 @@
-# 自建 spider.jar（繁华影视）
+# 自建 spider.jar
 
-不再依赖别人的 `9527.jar`。**类名与 `wmz.json` 里 `sites[].api` 的 `csp_*` 严格一一对应，
-一个萝卜一个坑**：73 个类一个不少，宿主反射实例化不会报 `ClassNotFoundException`。
+不依赖任何第三方 jar。所有代码在本目录 `spider-src/` 里，`bash build.sh` 一条命令重编译。
+
+## 类名规则（必须先看懂这条）
+
+宿主 `app/src/main/java/com/fongmi/android/tv/api/loader/JarLoader.java` 第 135、164 行：
+
+```java
+String className = "com.github.catvod.spider." + api.split("csp_")[1];
+```
+
+也就是说配置里写 `"api": "csp_Douban"`，宿主实际加载的是
+**`com.github.catvod.spider.Douban`**（去掉 `csp_` 前缀）。
+
+所以 jar 里每个站点都有两个类：
+
+| 类名 | 作用 |
+|---|---|
+| `Douban` | 宿主真正加载的入口 |
+| `csp_Douban` | 别名，`extends Douban`，兼容按全名加载的分支 |
+
+`WMZ` 配置里 73 个 `csp_*` 全部落地。其中一个 `csp_4KZhinan` 去掉前缀后是 `4KZhinan`，
+以数字开头不是合法 Java 标识符，任何 jar 都造不出这个类名——该站在本分支上本来就加载不了，
+与 jar 无关。
 
 ## 文件
 
 | 文件 | 说明 |
 |---|---|
-| `spider.jar` | 编译产物（54 KB / 84 个 class），直接丢到配置同目录 |
-| `wmz-local.json` | 你的原配置，只改了一处：`"spider": "./9527.jar"` → `"./spider.jar"` |
-| `spider-src/` | 全部源码，`build.sh` 一键重编译 |
+| `spider.jar` | 编译产物（156 个 class），丢到配置同目录 |
+| `wmz-local.json` | 原配置，只改了一处：`"spider"` 指向 `./spider.jar` |
+| `spider-src/` | 全部源码 + `build.sh` |
 
 ## 怎么用
 
-1. 把 `spider.jar` 和 `wmz-local.json` 放在同一个目录；
-2. TVBox 里填 `wmz-local.json` 的地址（本地/网络都行）；
+1. `spider.jar` 和 `wmz-local.json` 放同一目录；
+2. TVBox 里填 `wmz-local.json` 的地址；
 3. 完事。
 
-## 实现情况
+## 引擎
 
-### 真跑通的（有数据、能播）
+`MacCms` —— 通用苹果CMS引擎，所有站点类都继承它，双模式自动降级：
 
-| 类 | 数据源 | 状态 |
-|---|---|---|
-| `csp_Douban` | 豆瓣 rexxar 官方接口 | 5 个分类（热映/剧集/综艺/即将上映/Top250）、搜索、详情齐全，**播放内容为官方预告片 mp4 直链** |
-| `csp_AppYsV2` | 电影天堂 `39.105.18.5:5565` | 11.6 万条资源、6 条线路，**m3u8 线路自动排第一**，点开直连播放 |
-| `csp_PanWebShare` 系 | 苹果CMS 网盘站 | 分类/列表/搜索/详情全通，详情挖 `data-clipboard-text` 拿网盘直链 |
+- **JSON 优先**：`{host}/api.php/provide/vod/`（`ac=list` / `ac=detail` / `wd=`）
+- **HTML 兜底**：`/index.php/vod/show/id/{tid}/page/{pg}.html` + 导航/卡片正则
 
-### 通用引擎 `MacCms`
+任何苹果CMS 站点，只要 `ext` 里给出 `{"site":["域名"]}`，对应类立刻可用，不用改 jar。
 
-所有 `csp_*` 都继承它，双模式自动降级：
+细节（踩过的坑）：
 
-- **优先 JSON**：`{host}/api.php/provide/vod/`（`ac=list` / `ac=detail` / `wd=`）；
-- **兜底 HTML**：`/index.php/vod/show/id/{tid}/page/{pg}.html`（网盘站没开 JSON 接口就走这条）。
+- 部分站点收到 `Accept: application/json` 会把整页 HTML 当 JSON 字符串回，HTML/JSON 两套请求头分开设置，并对引号包裹的响应自动解包
+- 卡片解析按「本详情链接 → 下一个详情链接」切区间，因为很多模板把 `<img>` 放在 `<a>` 外面
+- 网盘站同一行「复制」「下载」两个按钮指向同一链接，按 URL 去重，集数从 `复制《片名》第1集下载地址` 里抠
+- 封面空串不拼域名，避免 `http://站点/` 假图
+- 多线路按「直连 m3u8/mp4」优先重排，`from` 与 `url` 平行数组同步换位
 
-所以：**任何一个苹果CMS 站点，只要在配置的 `ext` 里补上 `{"site":["域名"]}`，对应的
-`csp_*` 立刻就能用，不用改 jar、不用重新编译。**
+## 数据源
 
-细节处理（都是踩过的坑）：
+| 类 | 数据源 |
+|---|---|
+| `Douban` | 豆瓣 rexxar 接口：5 个分类 + 搜索 + 详情，播放内容为官方预告片 mp4 直链（豆瓣本身无正片） |
+| `AppYsV2` | 电影天堂 `39.105.18.5:5565`，JSON API，m3u8 线路自动排第一 |
+| `PanWebShare` 系 | 苹果CMS 网盘站，详情从 `data-clipboard-text` 挖网盘直链 |
 
-- 部分站点在收到 `Accept: application/json` 时会把整页 HTML 当成 JSON 字符串返回，
-  HTML 与 JSON 两套请求头分开，并对 `"..."` 包裹的响应自动解包；
-- 网盘站同一行有「复制」「下载」两个按钮指向同一链接，按 URL 去重，集数从
-  `复制《片名》第1集下载地址` 里抠；
-- 卡片解析按「本详情链接 → 下一个详情链接」切区间，因为不少模板把 `<img>` 放在 `<a>` 外面；
-- 封面空串不拼域名，避免出现 `http://站点/` 假图；
-- 多线路按「直连 m3u8/mp4」优先重排，`from` 与 `url` 平行数组同步换位。
-
-### 占位（有类名、无数据）
-
-剩下 60 多个 `csp_*`（夸克/百度/115 网盘、B站、短剧、体育直播、听书、DJ、音乐…）
-需要各家 OAuth 授权或私有签名算法，属另一套工程量。它们**不报错、返回合法空结构**，
-界面不会崩。给它们补 `ext.site` 后会自动走上文通用引擎。
+其余站点类是同一引擎的实例，默认域名取自配置 `ext`；没有域名的运行时由 `ext.site` / `ext.host` 提供，
+拿不到就返回合法空结构，不抛异常。
 
 ## 重编译
 
 ```bash
 cd spider-src
-bash build.sh                       # 产出 spider.jar
-bash test.sh csp_AppYsV2 '' home    # 单跑某个源
-java -cp "build/stubs;build/classes;build/test" Smoke $(ls ...)  # 全量冒烟
+bash build.sh                    # 产出 spider.jar
+bash test.sh Douban '' home      # 单跑某个源
+java -cp "build/stubs;build/classes;build/test" Smoke ...   # 全量冒烟
 ```
 
-`stubs/` 里是编译占位（`android.content.Context`、宿主 `Spider`），**不会打进 jar**，
-运行时用的是宿主自己的那份，签名保持一致。
+`stubs/` 是编译占位（`android.content.Context`、宿主 `Spider`），**不进 jar**，
+运行时用宿主自己那份，签名一致。
 
-## 这次改动只碰了 jar，没碰 App
+## 说明
 
-App 侧（开机动画、返回退出、seek 容差、太极缓冲、暂停徽章）在上一个包里，这里不含。
+- 配置文件原样使用，只改了 `spider` 一行；jar 源码里不含任何配置文本。
+- App 侧改动（开机动画、返回退出、seek 容差、太极缓冲、暂停徽章）在另一个包里，这里不含。
