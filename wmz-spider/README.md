@@ -95,13 +95,26 @@ TVBox 只认配置 json，不认 jar。json 里的 `spider` 字段告诉它 jar 
 
 ```bash
 cd spider-src
-bash build.sh                    # 产出 spider.jar
-bash test.sh Douban '' home      # 单跑某个源
+bash build.sh                    # 产出 spider.jar（自动过 d8 转 dex）
+bash test.sh Douban '' home      # 桌面 JVM 单跑某个源
 java -cp "build/stubs;build/classes;build/test" Smoke ...   # 全量冒烟
 ```
 
+### 为什么必须走 d8
+
+Android 的 `DexClassLoader` **只认 jar 里的 `classes.dex`**，纯 `.class` 的 jar 装上去会：
+
+```
+ClassNotFoundException: Didn't find class "com.github.catvod.spider.PanWebShare"
+on path: DexPathList[[zip file "/sdcard/TVBox/spider.jar"], ...]
+```
+
+桌面 JVM 能正常跑，盒子上全空——这个差异没法在电脑上测出来。
+`build.sh` 第 3 步用 `build-tools/*/d8 --min-api 21 --release --lib stubs.jar` 把
+class 转成 dex，第 4 步只把 `classes.dex` 打进 jar。
+
 `stubs/` 是编译占位（`android.content.Context`、宿主 `Spider`），**不进 jar**，
-运行时用宿主自己那份，签名一致。
+d8 阶段只以 `--lib` 形式提供类型，运行时用宿主自己那份。
 
 ## 说明
 
