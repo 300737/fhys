@@ -154,3 +154,30 @@ jobs:
             app/build/outputs/apk/**/*.apk
           if-no-files-found: error
           retention-days: 30
+
+      # 产物下载走自建 CF 反代加速，比裸连 GitHub 快得多
+      - name: Publish CDN download link
+        if: steps.pick.outputs.run == 'true'
+        env:
+          CF_PROXY: https://cf.612526.xyz
+        run: |
+          {
+            echo "### ${{ matrix.target }} 下载"
+            echo ""
+            echo "GitHub 直连慢的话，用自建反代 **$CF_PROXY**（会转发认证头，所以两步下载，第二步别带 token）："
+            echo ""
+            echo '```bash'
+            echo "TOKEN=<你的 GitHub token>"
+            echo "LOC=\$(curl -s -k -D - -o /dev/null -H \"Authorization: token \$TOKEN\" \\"
+            echo "  \"$CF_PROXY/https://api.github.com/repos/${{ github.repository }}/actions/artifacts/<artifact_id>/zip\" \\"
+            echo "  | grep -i '^location:' | cut -d' ' -f2 | tr -d '\r\n\t ')"
+            echo 'case "$LOC" in http*) ;; *) LOC="'$CF_PROXY'$LOC" ;; esac   # 反代返回相对路径，要补成绝对地址'
+            echo "curl -g -k -L -o apk.zip \"\$LOC\""
+            echo '```'
+            echo ""
+            echo "偷懒版：仓库里已带 \`tools/fetch-apk.sh\`，一条命令自动找最新构建并落桌面："
+            echo ""
+            echo '```bash'
+            echo "bash tools/fetch-apk.sh ${{ matrix.flavor }} ${{ matrix.abi }}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
