@@ -1,207 +1,389 @@
 package com.fongmi.android.tv.ui.custom;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.LinearGradient;
+import android.graphics.Matrix;
 import android.graphics.Paint;
-import android.graphics.RadialGradient;
+import android.graphics.Path;
 import android.graphics.RectF;
 import android.graphics.Shader;
 import android.graphics.Typeface;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.AttributeSet;
 import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.fongmi.android.tv.R;
+
+import java.util.Calendar;
 import java.util.Locale;
 
 /**
- * 设置页中间的动态图：彩虹星河（彩色星河粒子 + 旋转彩虹光环 + 「繁华影视」四色字波动呼吸）。
- * 纯 Canvas 绘制，无图片资源，任意分辨率清晰，几乎不占内存。
+ * 设置页中间的动态图：夜景钟表 + 月历。
+ * 表盘与三根指针是 PNG 素材（drawable-nodpi/ic_clock_*.png），由矩阵旋转绘制，
+ * 指针真走时；月历显示当前月份，当天红圈高亮，跨天自动切换。
  */
 public class StarFlowView extends View {
 
-    private static final long LOOP_MS = 2400L;      // 一个循环时长
-    private static final int STAR_COUNT = 110;
+    private static final String[] WEEK = {"一", "二", "三", "四", "五", "六", "日"};
 
-    // 四个字四种颜色：繁=青 华=紫 影=粉红 视=金
-    private static final int[] CHAR_COLORS = {0xFF5EE7FF, 0xFF7C6BFF, 0xFFFF6B8B, 0xFFFFC861};
-    private static final String[] CHARS = {"繁", "华", "影", "视"};
-    // 星河粒子五色循环
-    private static final int[] STAR_COLORS = {0xFF5EE7FF, 0xFF7C6BFF, 0xFFE86BFF, 0xFFFF6B8B, 0xFFFFC861};
+    // 生成素材时的基准尺寸，用来算指针缩放比
+    private static final float ASSET_S = 1024f;
+    private static final float ASSET_INNER = ASSET_S * 0.48f * 0.90f;
 
-    private final Paint starPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Paint ringPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Paint glowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final RectF ringRect = new RectF();
-    private final float[] charWidth = new float[4];
+    // 夜景配色
+    private static final int SKY_TOP = 0xFF07122B;
+    private static final int SKY_BOTTOM = 0xFF1E3F72;
+    private static final int CITY = 0xFF040A18;
+    private static final int WINDOW = 0xFFFFD98A;
+    private static final int DAY_GREEN = 0xFF9BE15D;
+    private static final int DAY_GREEN_DIM = 0xFF6FA84A;
+    private static final int TODAY_RED = 0xFFE53935;
+    private static final int TITLE_GOLD = 0xFFE8C766;
 
-    private final float[] starX = new float[STAR_COUNT];
-    private final float[] starY = new float[STAR_COUNT];
-    private final float[] starSpeed = new float[STAR_COUNT];
-    private final float[] starSize = new float[STAR_COUNT];
-    private final int[] starAlpha = new int[STAR_COUNT];
 
-    private float density;
-    private boolean running;
-    private long startTime;
-    private float textSize;
+    private final Paint bgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint cityPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint winPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint bmpPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint titlePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint weekPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint dayPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint todayPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint todayTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint arrowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final RectF dialRect = new RectF();
+    private final Path cityPath = new Path();
+    private final Matrix handMatrix = new Matrix();
 
-    public StarFlowView(Context context) {
-        this(context, null);
+    private Bitmap dialBmp, hourBmp, minuteBmp, secondBmp;
+
+
+    private final Handler handler = new Handler(Looper.getMainLooper());
+    private final Runnable tick = new Runnable() {
+        @Override
+        public void run() {
+            invalidate();
+        }
+    };
+
+    private final Calendar now = Calendar.getInstance();
+
+    // 几何缓存，避免每帧重复计算
+    private float clockCx, clockCy, clockR;
+    private float gridLeft, gridTop, gridCell;
+    private float titleY, weekY, arrowY;
+    private float cityBaseY;
+    private boolean laid;
+
+    public StarFlowView(@NonNull Context context) {
+        super(context);
+        init();
     }
 
-    public StarFlowView(Context context, @Nullable AttributeSet attrs) {
-        this(context, attrs, 0);
+    public StarFlowView(@NonNull Context context, @Nullable AttributeSet attrs) {
+        super(context, attrs);
+        init();
     }
 
-    public StarFlowView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+    public StarFlowView(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init();
     }
 
     private void init() {
-        density = getResources().getDisplayMetrics().density;
-        starPaint.setStyle(Paint.Style.FILL);
-        ringPaint.setStyle(Paint.Style.STROKE);
-        ringPaint.setStrokeWidth(dp(1.4f));
-        textPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
-        textPaint.setTextAlign(Paint.Align.CENTER);
-        glowPaint.setStyle(Paint.Style.FILL);
-        initStars();
+        bgPaint.setStyle(Paint.Style.FILL);
+
+        cityPaint.setStyle(Paint.Style.FILL);
+        cityPaint.setColor(CITY);
+
+        winPaint.setStyle(Paint.Style.FILL);
+        winPaint.setColor(WINDOW);
+        winPaint.setAlpha(150);
+
+        bmpPaint.setAntiAlias(true);
+        bmpPaint.setFilterBitmap(true);
+        bmpPaint.setDither(true);
+
+        titlePaint.setColor(TITLE_GOLD);
+        titlePaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+        titlePaint.setTextAlign(Paint.Align.CENTER);
+
+        weekPaint.setColor(TITLE_GOLD);
+        weekPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+        weekPaint.setTextAlign(Paint.Align.CENTER);
+
+        dayPaint.setTextAlign(Paint.Align.CENTER);
+        dayPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+
+        todayPaint.setStyle(Paint.Style.FILL);
+        todayPaint.setColor(TODAY_RED);
+
+        todayTextPaint.setColor(Color.WHITE);
+        todayTextPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+        todayTextPaint.setTextAlign(Paint.Align.CENTER);
+
+        arrowPaint.setColor(TITLE_GOLD);
+        arrowPaint.setStyle(Paint.Style.STROKE);
+        arrowPaint.setStrokeCap(Paint.Cap.ROUND);
+        arrowPaint.setStrokeWidth(3f);
     }
 
-    private void initStars() {
-        long seed = 20261015L;
-        for (int i = 0; i < STAR_COUNT; i++) {
-            seed = seed * 1103515245L + 12345L;
-            starX[i] = Math.abs(seed % 1000) / 1000f;
-            seed = seed * 1103515245L + 12345L;
-            starY[i] = Math.abs(seed % 1000) / 1000f;
-            seed = seed * 1103515245L + 12345L;
-            starSpeed[i] = 0.3f + Math.abs(seed % 1000) / 1000f * 0.9f;
-            seed = seed * 1103515245L + 12345L;
-            starSize[i] = 1.0f + Math.abs(seed % 1000) / 1000f * 2.2f;
-            seed = seed * 1103515245L + 12345L;
-            starAlpha[i] = 110 + (int) (Math.abs(seed % 1000) / 1000f * 145);
+    /** 素材只解码一次，退出时回收，避免反复 IO */
+    private void loadAssets() {
+        if (dialBmp != null) return;
+        dialBmp = BitmapFactory.decodeResource(getResources(), R.drawable.ic_clock_dial);
+        hourBmp = BitmapFactory.decodeResource(getResources(), R.drawable.ic_clock_hour);
+        minuteBmp = BitmapFactory.decodeResource(getResources(), R.drawable.ic_clock_minute);
+        secondBmp = BitmapFactory.decodeResource(getResources(), R.drawable.ic_clock_second);
+    }
+
+    private void recycleAssets() {
+        if (dialBmp != null) {
+            dialBmp.recycle();
+            dialBmp = null;
         }
-    }
-
-    private float dp(float v) {
-        return v * density;
+        if (hourBmp != null) {
+            hourBmp.recycle();
+            hourBmp = null;
+        }
+        if (minuteBmp != null) {
+            minuteBmp.recycle();
+            minuteBmp = null;
+        }
+        if (secondBmp != null) {
+            secondBmp.recycle();
+            secondBmp = null;
+        }
     }
 
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-        startTime = System.currentTimeMillis();
-        running = true;
-        postInvalidateOnAnimation();
+        loadAssets();
+        schedule();
     }
 
     @Override
     protected void onDetachedFromWindow() {
-        running = false;
+        handler.removeCallbacks(tick);
+        recycleAssets();
         super.onDetachedFromWindow();
     }
 
-    @Override
-    protected void onVisibilityChanged(@NonNull View changedView, int visibility) {
-        super.onVisibilityChanged(changedView, visibility);
-        running = visibility == VISIBLE;
-        if (running) postInvalidateOnAnimation();
+    /** 对齐到整秒再刷新，秒针走动才顺滑 */
+    private void schedule() {
+        long delay = 1000L - (System.currentTimeMillis() % 1000L);
+        handler.removeCallbacks(tick);
+        handler.postDelayed(tick, delay);
     }
 
     @Override
-    protected void onDraw(@NonNull Canvas canvas) {
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        laid = false;
+    }
+
+    private void layout(float w, float h) {
+        if (laid) return;
+        float top = h * 0.06f;
+
+        // 表盘：取宽高约束里较小的一边，保证永远画得下
+        clockR = Math.min(w * 0.34f, h * 0.20f);
+        clockCx = w * 0.5f;
+        clockCy = top + clockR;
+
+        // 月历：标题 + 星期行 + 6 行日期
+        gridLeft = w * 0.07f;
+        float gridW = w - gridLeft * 2f;
+        gridCell = gridW / 7f;
+        titleY = clockCy + clockR + h * 0.075f;
+        arrowY = titleY;
+        weekY = titleY + h * 0.045f;
+        gridTop = weekY + h * 0.028f;
+        cityBaseY = h * 0.93f;
+
+        float unit = Math.min(w, h);
+        titlePaint.setTextSize(unit * 0.030f);
+        weekPaint.setTextSize(unit * 0.023f);
+        dayPaint.setTextSize(Math.min(gridCell * 0.34f, unit * 0.026f));
+        todayTextPaint.setTextSize(dayPaint.getTextSize());
+
+        laid = true;
+    }
+
+    @Override
+    protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        int w = getWidth();
-        int h = getHeight();
+        float w = getWidth(), h = getHeight();
         if (w <= 0 || h <= 0) return;
+        layout(w, h);
 
-        float t = ((System.currentTimeMillis() - startTime) % LOOP_MS) / (float) LOOP_MS;
+        drawSky(canvas, w, h);
+        drawCity(canvas, w, h);
 
-        // 中心柔光，避免纯黑发死
-        drawCenterGlow(canvas, w, h);
+        now.setTimeInMillis(System.currentTimeMillis());
+        drawClock(canvas);
+        drawCalendar(canvas);
 
-        // 彩色星河粒子：缓缓上浮
-        for (int i = 0; i < STAR_COUNT; i++) {
-            float x = starX[i] * w;
-            float y = (starY[i] - t * starSpeed[i]) % 1f;
-            if (y < 0) y += 1f;
-            float r = dp(starSize[i]) * 0.55f;
-            starPaint.setColor(STAR_COLORS[i % STAR_COLORS.length]);
-            starPaint.setAlpha(starAlpha[i]);
-            canvas.drawCircle(x, y * h, r, starPaint);
+        schedule();
+    }
+
+    // ---------------- 背景 ----------------
+
+    private void drawSky(Canvas canvas, float w, float h) {
+        LinearGradient shader = new LinearGradient(0, 0, 0, h, SKY_TOP, SKY_BOTTOM, Shader.TileMode.CLAMP);
+        bgPaint.setShader(shader);
+        canvas.drawRect(0, 0, w, h, bgPaint);
+        bgPaint.setShader(null);
+    }
+
+    /** 底部城市剪影： deterministic 伪随机楼群 + 亮着的窗户 */
+    private void drawCity(Canvas canvas, float w, float h) {
+        cityPath.reset();
+        cityPath.moveTo(0, h);
+        float x = 0f;
+        int i = 0;
+        while (x < w) {
+            float bw = w * (0.07f + 0.05f * pseudo(i * 3 + 1));
+            float bh = h * (0.07f + 0.10f * pseudo(i * 7 + 5));
+            float top = cityBaseY - bh;
+            cityPath.lineTo(x, top);
+            cityPath.lineTo(x + bw, top);
+            // 楼顶天线
+            if (pseudo(i * 11 + 2) > 0.72f) {
+                float mx = x + bw * 0.5f;
+                cityPath.lineTo(mx, top - bh * 0.22f);
+                cityPath.lineTo(mx + 2f, top - bh * 0.22f);
+                cityPath.lineTo(mx + 2f, top);
+            }
+            x += bw;
+            i++;
+        }
+        cityPath.lineTo(w, cityBaseY);
+        cityPath.lineTo(w, h);
+        cityPath.close();
+        canvas.drawPath(cityPath, cityPaint);
+
+        // 窗户：同一套伪随机，保证每帧一致不闪烁
+        float wx = 0f;
+        int j = 0;
+        while (wx < w) {
+            float bw = w * (0.07f + 0.05f * pseudo(j * 3 + 1));
+            float bh = h * (0.07f + 0.10f * pseudo(j * 7 + 5));
+            float top = cityBaseY - bh;
+            for (int r = 0; r < 4; r++) {
+                for (int c = 0; c < 3; c++) {
+                    if (pseudo(j * 31 + r * 5 + c) < 0.45f) continue;
+                    float px = wx + bw * (0.18f + c * 0.28f);
+                    float py = top + bh * (0.12f + r * 0.22f);
+                    if (px + bw * 0.16f > w) continue;
+                    canvas.drawRect(px, py, px + bw * 0.14f, py + bh * 0.10f, winPaint);
+                }
+            }
+            wx += bw;
+            j++;
+        }
+    }
+
+    /** 稳定的 [0,1) 伪随机，同一 index 永远同一结果 */
+    private static float pseudo(int seed) {
+        int x = seed * 1103515245 + 12345;
+        x ^= (x >>> 13);
+        x = (x * 1664525) + 1013904223;
+        return ((x >>> 8) & 0xFFFF) / 65536f;
+    }
+
+    // ---------------- 钟表 ----------------
+
+    private void drawClock(Canvas canvas) {
+        if (dialBmp == null || hourBmp == null || minuteBmp == null || secondBmp == null) return;
+        float r = clockR;
+
+        // 表盘整图贴入圆形区域
+        dialRect.set(clockCx - r, clockCy - r, clockCx + r, clockCy + r);
+        canvas.drawBitmap(dialBmp, null, dialRect, bmpPaint);
+
+        int hour = now.get(Calendar.HOUR_OF_DAY);
+        int minute = now.get(Calendar.MINUTE);
+        int second = now.get(Calendar.MILLISECOND) / 1000;
+
+        // 素材里指针长度按 ASSET_INNER 设计，这里按当前表盘半径等比缩放
+        float scale = (r * 0.90f) / ASSET_INNER;
+
+        // 角度：0 度朝上（12 点），顺时针
+        drawHand(canvas, hourBmp, ((hour % 12) + minute / 60f) * 30f, scale);
+        drawHand(canvas, minuteBmp, (minute + second / 60f) * 6f, scale);
+        drawHand(canvas, secondBmp, second * 6f, scale);
+    }
+
+    /** 指针图竖直朝上、旋转点在图片底部中心，绕表盘中心旋转后绘制 */
+    private void drawHand(Canvas canvas, Bitmap hand, float degree, float scale) {
+        float px = hand.getWidth() / 2f;
+        float py = hand.getHeight();
+        handMatrix.reset();
+        handMatrix.postScale(scale, scale, px, py);
+        handMatrix.postRotate(degree, px, py);
+        handMatrix.postTranslate(clockCx - px, clockCy - py);
+        canvas.drawBitmap(hand, handMatrix, bmpPaint);
+    }
+
+    // ---------------- 月历 ----------------
+
+    private void drawCalendar(Canvas canvas) {
+        int year = now.get(Calendar.YEAR);
+        int month = now.get(Calendar.MONTH);       // 0-based
+        int today = now.get(Calendar.DAY_OF_MONTH);
+
+        // 标题 + 装饰箭头
+        canvas.drawText(String.format(Locale.CHINA, "%d年%d月", year, month + 1), clockCx, titleY, titlePaint);
+        float aw = titlePaint.getTextSize() * 0.55f;
+        drawArrow(canvas, clockCx - titlePaint.measureText(String.format(Locale.CHINA, "%d年%d月", year, month + 1)) / 2f - aw, arrowY, -1f);
+        drawArrow(canvas, clockCx + titlePaint.measureText(String.format(Locale.CHINA, "%d年%d月", year, month + 1)) / 2f + aw, arrowY, 1f);
+
+        // 星期行（周一在首列）
+        for (int c = 0; c < 7; c++) {
+            canvas.drawText(WEEK[c], gridLeft + gridCell * (c + 0.5f), weekY, weekPaint);
         }
 
-        // 旋转彩虹光环（拖尾）
-        float rr = h * 0.21f;
-        float cx = w / 2f, cy = h / 2f;
-        ringRect.set(cx - rr, cy - rr * 0.62f, cx + rr, cy + rr * 0.62f);
-        float startAngle = t * 360f;
-        float[] hsv = {0f, 0.8f, 1f};
-        for (int k = 0; k < 46; k++) {
-            float a0 = startAngle + k * 7.8f;
-            float al = (float) Math.pow(1 - k / 46f, 1.4) * 0.9f;
-            hsv[0] = (a0 % 360f + 360f) % 360f;
-            int rgb = Color.HSVToColor(hsv);
-            ringPaint.setColor(rgb);
-            ringPaint.setAlpha((int) (al * 255));
-            canvas.drawArc(ringRect, a0, 6f, false, ringPaint);
+        // 当月 1 号是周几：周日=1 → 首列偏移
+        Calendar first = Calendar.getInstance();
+        first.set(year, month, 1, 0, 0, 0);
+        first.set(Calendar.MILLISECOND, 0);
+        int lead = (first.get(Calendar.DAY_OF_WEEK) + 5) % 7;   // 周一=0
+        int days = first.getActualMaximum(Calendar.DAY_OF_MONTH);
+
+        float radius = Math.min(gridCell * 0.40f, dayPaint.getTextSize() * 0.85f);
+        for (int d = 1; d <= days; d++) {
+            int idx = lead + d - 1;
+            int row = idx / 7;
+            int col = idx % 7;
+            if (row > 5) break;
+            float x = gridLeft + gridCell * (col + 0.5f);
+            float y = gridTop + row * gridCell * 0.98f;
+            boolean isToday = (d == today);
+            if (isToday) {
+                canvas.drawCircle(x, y - dayPaint.getTextSize() * 0.34f, radius, todayPaint);
+                canvas.drawText(String.valueOf(d), x, y, todayTextPaint);
+            } else {
+                dayPaint.setColor((col >= 5) ? DAY_GREEN_DIM : DAY_GREEN);
+                canvas.drawText(String.valueOf(d), x, y, dayPaint);
+            }
         }
-
-        // 「繁华影视」四色字：逐字波动 + 呼吸发光（相位错开，像波浪跟着背景走）
-        float pulse = 0.55f + 0.45f * (float) (0.5 + 0.5 * Math.sin(2 * Math.PI * t));
-        textSize = w * 0.30f;
-        textPaint.setTextSize(textSize);
-        for (int i = 0; i < 4; i++) charWidth[i] = textPaint.measureText(CHARS[i]);
-        float lineH = textSize * 1.20f;
-        float cyText = h / 2f;
-        float gr = textSize * 2.4f;
-        glowPaint.setShader(new RadialGradient(cx, cyText, gr,
-                new int[]{(int) (0x30 * pulse) << 24 | 0x78A0FF, 0x0078A0FF},
-                new float[]{0f, 1f}, Shader.TileMode.CLAMP));
-        canvas.drawCircle(cx, cyText, gr, glowPaint);
-        glowPaint.setShader(null);
-
-        drawLine(canvas, 0, 1, cx, cyText - lineH * 0.5f + textSize * 0.36f, pulse);
-        drawLine(canvas, 2, 3, cx, cyText + lineH * 0.5f + textSize * 0.36f, pulse);
-
-        if (running) postInvalidateOnAnimation();
     }
 
-    private void drawCenterGlow(Canvas canvas, int w, int h) {
-        float rx = w * 0.45f, ry = h * 0.22f;
-        glowPaint.setShader(new RadialGradient(w / 2f, h / 2f, Math.max(rx, ry),
-                new int[]{0x1EFFFFFF, 0x00FFFFFF}, new float[]{0f, 1f}, Shader.TileMode.CLAMP));
-        canvas.drawOval(new RectF(w / 2f - rx, h / 2f - ry, w / 2f + rx, h / 2f + ry), glowPaint);
-        glowPaint.setShader(null);
-    }
-
-    /** 画一排两个字（居中），带波动与四色发光 */
-    private void drawLine(Canvas canvas, int i0, int i1, float cx, float yBase, float pulse) {
-        float lineW = charWidth[i0] + charWidth[i1];
-        float x = cx - lineW / 2f;
-        drawChar(canvas, i0, x + charWidth[i0] / 2f, yBase, pulse);
-        drawChar(canvas, i1, x + charWidth[i0] + charWidth[i1] / 2f, yBase, pulse);
-    }
-
-    /** 画单个字：dy = sin(2π(t + idx*0.13)) 波动，颜色 + 同色发光 */
-    private void drawChar(Canvas canvas, int idx, float cx, float yBase, float pulse) {
-        float t = ((System.currentTimeMillis() - startTime) % LOOP_MS) / (float) LOOP_MS;
-        float dy = (float) Math.sin(2 * Math.PI * (t + idx * 0.13)) * textSize * 0.075f;
-        int color = CHAR_COLORS[idx];
-        textPaint.setColor(color);
-        textPaint.setShadowLayer(textSize * 0.18f, 0, 0, (int) (0x70 * pulse) << 24 | (color & 0xFFFFFF));
-        canvas.drawText(CHARS[idx], cx, yBase + dy, textPaint);
-        textPaint.clearShadowLayer();
-    }
-
-    @Override
-    public String toString() {
-        return String.format(Locale.US, "StarFlowView[%dx%d]", getWidth(), getHeight());
+    private void drawArrow(Canvas canvas, float x, float y, float dir) {
+        float s = titlePaint.getTextSize() * 0.30f;
+        canvas.drawLine(x - s * dir, y - s, x + s * dir, y - s, arrowPaint);
+        canvas.drawLine(x - s * dir, y + s, x + s * dir, y + s, arrowPaint);
+        canvas.drawLine(x - s * dir, y - s, x + s * dir, y, arrowPaint);
+        canvas.drawLine(x - s * dir, y + s, x + s * dir, y, arrowPaint);
     }
 }
