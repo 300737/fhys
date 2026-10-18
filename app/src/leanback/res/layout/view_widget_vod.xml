@@ -77,57 +77,65 @@
 
     </androidx.appcompat.widget.LinearLayoutCompat>
 
-    <androidx.appcompat.widget.LinearLayoutCompat
+    <FrameLayout
         android:id="@+id/center"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
         android:layout_gravity="center"
-        android:background="@drawable/shape_widget"
-        android:gravity="center"
-        android:orientation="vertical"
         android:visibility="gone"
         tools:visibility="visible">
 
+        <com.fongmi.android.tv.ui.custom.PauseBadgeView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
         <androidx.appcompat.widget.AppCompatImageView
             android:id="@+id/action"
-            android:layout_width="56dp"
-            android:layout_height="56dp"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="38dp"
             android:src="@drawable/ic_widget_play" />
 
         <androidx.appcompat.widget.LinearLayoutCompat
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal|bottom"
+            android:layout_marginBottom="28dp"
             android:orientation="horizontal">
 
             <com.google.android.material.textview.MaterialTextView
                 android:id="@+id/position"
+                style="@style/Shadow"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:fontFeatureSettings="tnum"
-                android:textColor="@color/white"
-                android:textSize="16sp"
+                android:textColor="#FFD54F"
+                android:textSize="14sp"
                 tools:text="00:00:00" />
 
             <com.google.android.material.textview.MaterialTextView
+                style="@style/Shadow"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="4dp"
                 android:layout_marginEnd="4dp"
                 android:text="/"
-                android:textColor="@color/white"
-                android:textSize="16sp" />
+                android:textColor="#78909C"
+                android:textSize="14sp" />
 
             <com.google.android.material.textview.MaterialTextView
                 android:id="@+id/duration"
+                style="@style/Shadow"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:fontFeatureSettings="tnum"
-                android:textColor="@color/white"
-                android:textSize="16sp"
+                android:textColor="#B0BEC5"
+                android:textSize="14sp"
                 tools:text="00:00:00" />
 
         </androidx.appcompat.widget.LinearLayoutCompat>
-    </androidx.appcompat.widget.LinearLayoutCompat>
+    </FrameLayout>
 
     <androidx.appcompat.widget.AppCompatImageView
         android:id="@+id/speed"
