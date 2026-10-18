@@ -14,14 +14,6 @@ BLUSH = (232, 196, 196, 255)      # 外圈粉色做旧
 BLUSH_D = (214, 168, 168, 255)
 CREAM = (250, 244, 228, 255)      # 米白细环
 INK = (43, 33, 24, 255)           # 深褐黑
-ROSE = (216, 92, 128, 255)
-ROSE_L = (240, 150, 175, 255)
-ROSE_D = (176, 58, 96, 255)
-LEAF = (104, 138, 88, 255)
-LEAF_D = (74, 106, 62, 255)
-CREAM_FLOWER = (248, 240, 226, 255)
-LILAC = (188, 152, 198, 255)
-STAMEN = (226, 186, 92, 255)
 
 
 def italic_font(size):
@@ -78,58 +70,6 @@ def paper_layer(size, base, seed, blotch=0.16, vig=0.18):
     return out
 
 
-def rose(d, cx, cy, R, petals, outer, inner, core=None):
-    """一层牡丹：outer 外瓣色，inner 内瓣色"""
-    for ring, (n, rad, col) in enumerate(petals):
-        for i in range(n):
-            a = 2 * math.pi * i / n + ring * 0.35
-            px = cx + rad * 0.62 * math.cos(a)
-            py = cy + rad * 0.62 * math.sin(a)
-            rw = rad * 0.46
-            rh = rad * 0.34
-            d.ellipse([px - rw, py - rh, px + rw, py + rh], fill=col)
-    if core:
-        d.ellipse([cx - R * 0.16, cy - R * 0.16, cx + R * 0.16, cy + R * 0.16], fill=core)
-
-
-def flower_bunch(d, cx, cy, scale):
-    """参考图底部那一束花：两朵大牡丹 + 小白花 + 叶"""
-    s = scale
-    # 叶子（先画，压在花瓣下）
-    for (lx, ly, ang, ln) in ((-1.15, 0.30, 205, 0.95), (-0.85, 0.52, 250, 0.80),
-                              (0.95, 0.42, 330, 0.85), (1.15, 0.10, 20, 0.70)):
-        ex = cx + lx * s
-        ey = cy + ly * s
-        leaf = Image.new("RGBA", (int(1.6 * s), int(0.7 * s)), (0, 0, 0, 0))
-        ImageDraw.Draw(leaf).ellipse([0, 0, 1.6 * s, 0.7 * s], fill=LEAF)
-        ImageDraw.Draw(leaf).ellipse([0.12 * s, 0.08 * s, 1.48 * s, 0.62 * s], fill=LEAF_D)
-        leaf = leaf.rotate(ang, expand=True, resample=Image.BICUBIC)
-        d._image.alpha_composite(leaf, (int(ex - leaf.width / 2), int(ey - leaf.height / 2)))
-
-    # 左侧大牡丹（玫红）
-    rose(d, cx - 0.55 * s, cy + 0.02 * s, 0.52 * s,
-         [(9, 0.52 * s, ROSE), (7, 0.36 * s, ROSE_L), (5, 0.20 * s, ROSE_D)],
-         ROSE, ROSE_D, core=STAMEN)
-
-    # 右侧大牡丹（粉）
-    rose(d, cx + 0.42 * s, cy + 0.16 * s, 0.44 * s,
-         [(8, 0.44 * s, ROSE_L), (6, 0.30 * s, ROSE), (5, 0.17 * s, ROSE_D)],
-         ROSE_L, ROSE_D, core=STAMEN)
-
-    # 小白花 + 淡紫小花点缀
-    for (fx, fy, r, col) in ((0.95, -0.42, 0.16, CREAM_FLOWER), (1.18, -0.18, 0.12, LILAC),
-                             (-1.02, -0.34, 0.13, CREAM_FLOWER), (0.70, -0.58, 0.10, LILAC)):
-        px, py = cx + fx * s, cy + fy * s
-        for i in range(6):
-            a = 2 * math.pi * i / 6
-            d.ellipse([px + r * s * 0.8 * math.cos(a) - r * s * 0.45,
-                       py + r * s * 0.8 * math.sin(a) - r * s * 0.45,
-                       px + r * s * 0.8 * math.cos(a) + r * s * 0.45,
-                       py + r * s * 0.8 * math.sin(a) + r * s * 0.45], fill=col)
-        d.ellipse([px - r * s * 0.26, py - r * s * 0.26, px + r * s * 0.26, py + r * s * 0.26],
-                  fill=STAMEN)
-
-
 def make_dial(S=1024):
     c = S / 2
     R = S * 0.485
@@ -180,19 +120,6 @@ def make_dial(S=1024):
         # 轻微倾斜，强化参考图的手写斜体感
         d.text((x - (bb[2] - bb[0]) / 2 - bb[0], y - (bb[3] - bb[1]) / 2 - bb[1]),
                str(i), font=f, fill=INK)
-
-    # ---- 花体装饰英文（纯装饰，小字斜排）----
-    fe = italic_font(int(S * 0.030))
-    lines = [("Azdkfls asdas a yk;kaa ajk", 0.155),
-             ("Qzfkaj f eklsf sef;kejflk sefjkvo", 0.205),
-             ("Iqj s;jk;skel; s e", 0.252),
-             ("Qaoiwu-pkfeoik wergoi", 0.298)]
-    for text, ry in lines:
-        d.text((c, c - inner * 0.60 + inner * ry * 1.6), text, font=fe,
-               fill=(90, 70, 55, 255), anchor="mm")
-
-    # ---- 底部花卉束 ----
-    flower_bunch(d, c, c + inner * 0.40, inner * 0.62)
 
     # ---- 中心小圆环 ----
     rr = S * 0.030

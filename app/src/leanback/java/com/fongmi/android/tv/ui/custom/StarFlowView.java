@@ -41,12 +41,8 @@ public class StarFlowView extends View {
     private static final int DAY_GREEN_DIM = 0xFF6FA84A;
     private static final int TODAY_RED = 0xFFE53935;
     private static final int TITLE_GOLD = 0xFFE8C766;
-    private static final int PANEL_FILL = 0x66150F30;      // 深紫半透明面板
-    private static final int PANEL_STROKE = 0x33C8A02A;    // 极淡金边
 
     private final Paint bmpPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Paint panelPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Paint panelStrokePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint titlePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint weekPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint dayPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -54,7 +50,6 @@ public class StarFlowView extends View {
     private final Paint todayTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint arrowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF dialRect = new RectF();
-    private final RectF panelRect = new RectF();
     private final Matrix handMatrix = new Matrix();
 
     private Bitmap dialBmp, hourBmp, minuteBmp, secondBmp;
@@ -95,13 +90,6 @@ public class StarFlowView extends View {
         bmpPaint.setAntiAlias(true);
         bmpPaint.setFilterBitmap(true);
         bmpPaint.setDither(true);
-
-        panelPaint.setStyle(Paint.Style.FILL);
-        panelPaint.setColor(PANEL_FILL);
-
-        panelStrokePaint.setStyle(Paint.Style.STROKE);
-        panelStrokePaint.setColor(PANEL_STROKE);
-        panelStrokePaint.setStrokeWidth(1.5f);
 
         titlePaint.setColor(TITLE_GOLD);
         titlePaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
@@ -274,11 +262,6 @@ public class StarFlowView extends View {
         int year = now.get(Calendar.YEAR);
         int month = now.get(Calendar.MONTH);       // 0-based
         int today = now.get(Calendar.DAY_OF_MONTH);
-
-        // 半透明深色圆角面板 + 细金边：数字落在干净背景上，可读性最好
-        panelRect.set(panelLeft, panelTop, panelRight, panelBottom);
-        canvas.drawRoundRect(panelRect, corner, corner, panelPaint);
-        canvas.drawRoundRect(panelRect, corner, corner, panelStrokePaint);
 
         // 标题 + 装饰箭头
         String label = String.format(Locale.CHINA, "%d年%d月", year, month + 1);
