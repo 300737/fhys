@@ -5,12 +5,9 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.LinearGradient;
 import android.graphics.Matrix;
 import android.graphics.Paint;
-import android.graphics.Path;
 import android.graphics.RectF;
-import android.graphics.Shader;
 import android.graphics.Typeface;
 import android.os.Handler;
 import android.os.Looper;
@@ -26,9 +23,10 @@ import java.util.Calendar;
 import java.util.Locale;
 
 /**
- * 设置页中间的动态图：夜景钟表 + 月历。
+ * 设置页中间的动态图：钟表 + 月历。
  * 表盘与三根指针是 PNG 素材（drawable-nodpi/ic_clock_*.png），由矩阵旋转绘制，
  * 指针真走时；月历显示当前月份，当天红圈高亮，跨天自动切换。
+ * 背景完全透明，直接透出外层 bg_page 的紫色渐变，不做成卡片。
  */
 public class StarFlowView extends View {
 
@@ -38,21 +36,17 @@ public class StarFlowView extends View {
     private static final float ASSET_S = 1024f;
     private static final float ASSET_INNER = ASSET_S * 0.48f * 0.90f;
 
-    // 夜景配色
-    private static final int SKY_TOP = 0xFF07122B;
-    private static final int SKY_BOTTOM = 0xFF1E3F72;
-    private static final int CITY = 0xFF040A18;
-    private static final int WINDOW = 0xFFFFD98A;
+    // 配色：全部跟着外层 bg_page 的紫色渐变走（#3B2890 → #2A1C6B → #150F30）
     private static final int DAY_GREEN = 0xFF9BE15D;
     private static final int DAY_GREEN_DIM = 0xFF6FA84A;
     private static final int TODAY_RED = 0xFFE53935;
     private static final int TITLE_GOLD = 0xFFE8C766;
+    private static final int PANEL_FILL = 0x66150F30;      // 深紫半透明面板
+    private static final int PANEL_STROKE = 0x33C8A02A;    // 极淡金边
 
-
-    private final Paint bgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Paint cityPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Paint winPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint bmpPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint panelPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint panelStrokePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint titlePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint weekPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint dayPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -60,11 +54,10 @@ public class StarFlowView extends View {
     private final Paint todayTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint arrowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF dialRect = new RectF();
-    private final Path cityPath = new Path();
+    private final RectF panelRect = new RectF();
     private final Matrix handMatrix = new Matrix();
 
     private Bitmap dialBmp, hourBmp, minuteBmp, secondBmp;
-
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Runnable tick = new Runnable() {
@@ -78,9 +71,9 @@ public class StarFlowView extends View {
 
     // 几何缓存，避免每帧重复计算
     private float clockCx, clockCy, clockR;
-    private float gridLeft, gridTop, gridCell;
+    private float panelLeft, panelRight, panelTop, panelBottom, corner;
+    private float gridLeft, gridRight, gridTop, gridCell;
     private float titleY, weekY, arrowY;
-    private float cityBaseY;
     private boolean laid;
 
     public StarFlowView(@NonNull Context context) {
@@ -99,18 +92,16 @@ public class StarFlowView extends View {
     }
 
     private void init() {
-        bgPaint.setStyle(Paint.Style.FILL);
-
-        cityPaint.setStyle(Paint.Style.FILL);
-        cityPaint.setColor(CITY);
-
-        winPaint.setStyle(Paint.Style.FILL);
-        winPaint.setColor(WINDOW);
-        winPaint.setAlpha(150);
-
         bmpPaint.setAntiAlias(true);
         bmpPaint.setFilterBitmap(true);
         bmpPaint.setDither(true);
+
+        panelPaint.setStyle(Paint.Style.FILL);
+        panelPaint.setColor(PANEL_FILL);
+
+        panelStrokePaint.setStyle(Paint.Style.STROKE);
+        panelStrokePaint.setColor(PANEL_STROKE);
+        panelStrokePaint.setStrokeWidth(1.5f);
 
         titlePaint.setColor(TITLE_GOLD);
         titlePaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
@@ -193,27 +184,35 @@ public class StarFlowView extends View {
 
     private void layout(float w, float h) {
         if (laid) return;
-        float top = h * 0.06f;
+        float top = h * 0.05f;
 
         // 表盘：取宽高约束里较小的一边，保证永远画得下
-        clockR = Math.min(w * 0.34f, h * 0.20f);
+        clockR = Math.min(w * 0.33f, h * 0.185f);
         clockCx = w * 0.5f;
         clockCy = top + clockR;
 
-        // 月历：标题 + 星期行 + 6 行日期
-        gridLeft = w * 0.07f;
-        float gridW = w - gridLeft * 2f;
-        gridCell = gridW / 7f;
-        titleY = clockCy + clockR + h * 0.075f;
+        // 日历面板：从表盘下方一直延伸到底部，6 行日期全部关在面板内，
+        // 背景只有渐变，不会再有任何元素和数字抢位置
+        panelLeft = w * 0.06f;
+        panelRight = w - panelLeft;
+        panelTop = clockCy + clockR + h * 0.05f;
+        panelBottom = h * 0.955f;
+        float panelH = panelBottom - panelTop;
+
+        titleY = panelTop + panelH * 0.105f;
         arrowY = titleY;
-        weekY = titleY + h * 0.045f;
-        gridTop = weekY + h * 0.028f;
-        cityBaseY = h * 0.93f;
+        weekY = panelTop + panelH * 0.225f;
+        gridTop = panelTop + panelH * 0.325f;
+        gridCell = panelH * 0.675f / 6f;
+
+        gridLeft = panelLeft + w * 0.035f;
+        gridRight = panelRight - w * 0.035f;
 
         float unit = Math.min(w, h);
-        titlePaint.setTextSize(unit * 0.030f);
-        weekPaint.setTextSize(unit * 0.023f);
-        dayPaint.setTextSize(Math.min(gridCell * 0.34f, unit * 0.026f));
+        corner = unit * 0.022f;
+        titlePaint.setTextSize(unit * 0.032f);
+        weekPaint.setTextSize(unit * 0.024f);
+        dayPaint.setTextSize(Math.min(gridCell * 0.44f, unit * 0.028f));
         todayTextPaint.setTextSize(dayPaint.getTextSize());
 
         laid = true;
@@ -226,9 +225,6 @@ public class StarFlowView extends View {
         if (w <= 0 || h <= 0) return;
         layout(w, h);
 
-        drawSky(canvas, w, h);
-        drawCity(canvas, w, h);
-
         now.setTimeInMillis(System.currentTimeMillis());
         drawClock(canvas);
         drawCalendar(canvas);
@@ -237,69 +233,6 @@ public class StarFlowView extends View {
     }
 
     // ---------------- 背景 ----------------
-
-    private void drawSky(Canvas canvas, float w, float h) {
-        LinearGradient shader = new LinearGradient(0, 0, 0, h, SKY_TOP, SKY_BOTTOM, Shader.TileMode.CLAMP);
-        bgPaint.setShader(shader);
-        canvas.drawRect(0, 0, w, h, bgPaint);
-        bgPaint.setShader(null);
-    }
-
-    /** 底部城市剪影： deterministic 伪随机楼群 + 亮着的窗户 */
-    private void drawCity(Canvas canvas, float w, float h) {
-        cityPath.reset();
-        cityPath.moveTo(0, h);
-        float x = 0f;
-        int i = 0;
-        while (x < w) {
-            float bw = w * (0.07f + 0.05f * pseudo(i * 3 + 1));
-            float bh = h * (0.07f + 0.10f * pseudo(i * 7 + 5));
-            float top = cityBaseY - bh;
-            cityPath.lineTo(x, top);
-            cityPath.lineTo(x + bw, top);
-            // 楼顶天线
-            if (pseudo(i * 11 + 2) > 0.72f) {
-                float mx = x + bw * 0.5f;
-                cityPath.lineTo(mx, top - bh * 0.22f);
-                cityPath.lineTo(mx + 2f, top - bh * 0.22f);
-                cityPath.lineTo(mx + 2f, top);
-            }
-            x += bw;
-            i++;
-        }
-        cityPath.lineTo(w, cityBaseY);
-        cityPath.lineTo(w, h);
-        cityPath.close();
-        canvas.drawPath(cityPath, cityPaint);
-
-        // 窗户：同一套伪随机，保证每帧一致不闪烁
-        float wx = 0f;
-        int j = 0;
-        while (wx < w) {
-            float bw = w * (0.07f + 0.05f * pseudo(j * 3 + 1));
-            float bh = h * (0.07f + 0.10f * pseudo(j * 7 + 5));
-            float top = cityBaseY - bh;
-            for (int r = 0; r < 4; r++) {
-                for (int c = 0; c < 3; c++) {
-                    if (pseudo(j * 31 + r * 5 + c) < 0.45f) continue;
-                    float px = wx + bw * (0.18f + c * 0.28f);
-                    float py = top + bh * (0.12f + r * 0.22f);
-                    if (px + bw * 0.16f > w) continue;
-                    canvas.drawRect(px, py, px + bw * 0.14f, py + bh * 0.10f, winPaint);
-                }
-            }
-            wx += bw;
-            j++;
-        }
-    }
-
-    /** 稳定的 [0,1) 伪随机，同一 index 永远同一结果 */
-    private static float pseudo(int seed) {
-        int x = seed * 1103515245 + 12345;
-        x ^= (x >>> 13);
-        x = (x * 1664525) + 1013904223;
-        return ((x >>> 8) & 0xFFFF) / 65536f;
-    }
 
     // ---------------- 钟表 ----------------
 
@@ -342,15 +275,23 @@ public class StarFlowView extends View {
         int month = now.get(Calendar.MONTH);       // 0-based
         int today = now.get(Calendar.DAY_OF_MONTH);
 
+        // 半透明深色圆角面板 + 细金边：数字落在干净背景上，可读性最好
+        panelRect.set(panelLeft, panelTop, panelRight, panelBottom);
+        canvas.drawRoundRect(panelRect, corner, corner, panelPaint);
+        canvas.drawRoundRect(panelRect, corner, corner, panelStrokePaint);
+
         // 标题 + 装饰箭头
-        canvas.drawText(String.format(Locale.CHINA, "%d年%d月", year, month + 1), clockCx, titleY, titlePaint);
-        float aw = titlePaint.getTextSize() * 0.55f;
-        drawArrow(canvas, clockCx - titlePaint.measureText(String.format(Locale.CHINA, "%d年%d月", year, month + 1)) / 2f - aw, arrowY, -1f);
-        drawArrow(canvas, clockCx + titlePaint.measureText(String.format(Locale.CHINA, "%d年%d月", year, month + 1)) / 2f + aw, arrowY, 1f);
+        String label = String.format(Locale.CHINA, "%d年%d月", year, month + 1);
+        canvas.drawText(label, clockCx, titleY, titlePaint);
+        float half = titlePaint.measureText(label) / 2f;
+        float aw = titlePaint.getTextSize() * 0.62f;
+        drawArrow(canvas, clockCx - half - aw, arrowY, -1f);
+        drawArrow(canvas, clockCx + half + aw, arrowY, 1f);
 
         // 星期行（周一在首列）
+        float colW = (gridRight - gridLeft) / 7f;
         for (int c = 0; c < 7; c++) {
-            canvas.drawText(WEEK[c], gridLeft + gridCell * (c + 0.5f), weekY, weekPaint);
+            canvas.drawText(WEEK[c], gridLeft + colW * (c + 0.5f), weekY, weekPaint);
         }
 
         // 当月 1 号是周几：周日=1 → 首列偏移
@@ -360,17 +301,16 @@ public class StarFlowView extends View {
         int lead = (first.get(Calendar.DAY_OF_WEEK) + 5) % 7;   // 周一=0
         int days = first.getActualMaximum(Calendar.DAY_OF_MONTH);
 
-        float radius = Math.min(gridCell * 0.40f, dayPaint.getTextSize() * 0.85f);
+        float radius = Math.min(colW * 0.40f, dayPaint.getTextSize() * 0.92f);
         for (int d = 1; d <= days; d++) {
             int idx = lead + d - 1;
             int row = idx / 7;
             int col = idx % 7;
             if (row > 5) break;
-            float x = gridLeft + gridCell * (col + 0.5f);
-            float y = gridTop + row * gridCell * 0.98f;
-            boolean isToday = (d == today);
-            if (isToday) {
-                canvas.drawCircle(x, y - dayPaint.getTextSize() * 0.34f, radius, todayPaint);
+            float x = gridLeft + colW * (col + 0.5f);
+            float y = gridTop + row * gridCell;
+            if (d == today) {
+                canvas.drawCircle(x, y - dayPaint.getTextSize() * 0.35f, radius, todayPaint);
                 canvas.drawText(String.valueOf(d), x, y, todayTextPaint);
             } else {
                 dayPaint.setColor((col >= 5) ? DAY_GREEN_DIM : DAY_GREEN);

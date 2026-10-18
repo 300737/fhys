@@ -395,16 +395,14 @@
 
             </androidx.appcompat.widget.LinearLayoutCompat>
 
-            <!-- 中间动图位：星河流转（纯 Canvas 绘制，见 StarFlowView；要换风格只改这个类） -->
+            <!-- 中间动图位：钟表 + 月历（透明底，直接透出外层 bg_page 的紫色渐变，不做成卡片） -->
             <com.fongmi.android.tv.ui.custom.StarFlowView
                 android:id="@+id/centerPoster"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_marginStart="12dp"
                 android:layout_marginEnd="12dp"
-                android:layout_weight="1.2"
-                android:background="@drawable/shape_poster"
-                android:clipToOutline="true" />
+                android:layout_weight="1.2" />
 
             <!-- 右列 -->
             <androidx.appcompat.widget.LinearLayoutCompat
