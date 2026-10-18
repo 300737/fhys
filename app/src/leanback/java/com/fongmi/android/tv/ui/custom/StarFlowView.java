@@ -157,9 +157,9 @@ public class StarFlowView extends View {
         super.onDetachedFromWindow();
     }
 
-    /** 对齐到整秒再刷新，秒针走动才顺滑 */
+    /** 100ms 一刷，秒针才是平滑扫过；对齐到整百毫秒避免漂移 */
     private void schedule() {
-        long delay = 1000L - (System.currentTimeMillis() % 1000L);
+        long delay = 100L - (System.currentTimeMillis() % 100L);
         handler.removeCallbacks(tick);
         handler.postDelayed(tick, delay);
     }
@@ -232,17 +232,18 @@ public class StarFlowView extends View {
         dialRect.set(clockCx - r, clockCy - r, clockCx + r, clockCy + r);
         canvas.drawBitmap(dialBmp, null, dialRect, bmpPaint);
 
-        int hour = now.get(Calendar.HOUR_OF_DAY);
-        int minute = now.get(Calendar.MINUTE);
-        int second = now.get(Calendar.MILLISECOND) / 1000;
+        // 连续时间量：秒带毫秒小数，三根针都是平滑扫过，不是跳格
+        float secF = now.get(Calendar.SECOND) + now.get(Calendar.MILLISECOND) / 1000f;
+        float minF = now.get(Calendar.MINUTE) + secF / 60f;
+        float hourF = (now.get(Calendar.HOUR_OF_DAY) % 12) + minF / 60f;
 
         // 素材里指针长度按 ASSET_INNER 设计，这里按当前表盘半径等比缩放
         float scale = (r * 0.90f) / ASSET_INNER;
 
         // 角度：0 度朝上（12 点），顺时针
-        drawHand(canvas, hourBmp, ((hour % 12) + minute / 60f) * 30f, scale);
-        drawHand(canvas, minuteBmp, (minute + second / 60f) * 6f, scale);
-        drawHand(canvas, secondBmp, second * 6f, scale);
+        drawHand(canvas, hourBmp, hourF * 30f, scale);
+        drawHand(canvas, minuteBmp, minF * 6f, scale);
+        drawHand(canvas, secondBmp, secF * 6f, scale);
     }
 
     /** 指针图竖直朝上、旋转点在图片底部中心，绕表盘中心旋转后绘制 */
