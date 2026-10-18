@@ -2,6 +2,7 @@
 
     <!-- App -->
     <string name="app_name">繁华影视</string>
+    <string name="exit_hint">再按一次返回键退出应用</string>
 
     <!-- Live -->
     <string name="live_pass">Pass</string>

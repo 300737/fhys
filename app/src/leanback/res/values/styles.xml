@@ -32,6 +32,11 @@
 
     <style name="Theme.App" parent="Theme.Base" />
 
+    <!-- 首页启动主题：窗口首帧即城堡壁纸（与开机动画无缝衔接，无纯色闪屏、无圆形 logo） -->
+    <style name="Theme.Launch" parent="Theme.App">
+        <item name="android:windowBackground">@drawable/bg_launch</item>
+    </style>
+
     <style name="Theme.Crash" parent="Theme.Base">
         <item name="android:windowBackground">@color/grey_800</item>
         <item name="android:windowDisablePreview">true</item>

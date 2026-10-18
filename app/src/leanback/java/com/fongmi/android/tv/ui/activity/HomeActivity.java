@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.provider.Settings;
 import android.text.TextUtils;
 import android.view.KeyEvent;
@@ -15,7 +16,6 @@ import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.splashscreen.SplashScreen;
 import androidx.leanback.widget.ArrayObjectAdapter;
 import androidx.leanback.widget.FocusHighlight;
 import androidx.leanback.widget.HorizontalGridView;
@@ -93,6 +93,7 @@ import com.fongmi.android.tv.utils.Task;
 import android.content.ServiceConnection;
 import android.content.ComponentName;
 import android.os.IBinder;
+import android.widget.Toast;
 import androidx.media3.ui.PlayerView;
 import androidx.lifecycle.Observer;
 
@@ -124,6 +125,7 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
     private PlaybackService mPlaybackService;
     private PlayerView mPreviewPlayerView;
     private com.fongmi.android.tv.ui.custom.LaunchSplashView launchSplash;
+    private long lastBackAt;
     private Observer<Result> mObserveLiveUrl;
     private final BroadcastReceiver mNetworkReceiver = new BroadcastReceiver() {
         @Override
@@ -148,19 +150,29 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
+        // 从桌面再次点开（进程还活着）：每次启动都重播开机动画
+        if (intent != null && Intent.ACTION_MAIN.equals(intent.getAction())) {
+            com.fongmi.android.tv.ui.custom.LaunchSplashView.reset();
+            showLaunchSplash();
+        }
         checkAction(intent);
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        SplashScreen.installSplashScreen(this);
         super.onCreate(savedInstanceState);
         // 冷启动开机动画：4K视界式全屏大图 + 进度状态 + 招牌金字，5 秒，任意按键跳过
         // 启动途中 Activity 可能被 recreate，shouldShow() 保证重建后自动补挂并接续剩余时间
-        if (com.fongmi.android.tv.ui.custom.LaunchSplashView.shouldShow()) {
-            launchSplash = new com.fongmi.android.tv.ui.custom.LaunchSplashView(this);
-            ((android.view.ViewGroup) findViewById(android.R.id.content)).addView(launchSplash);
+        showLaunchSplash();
+    }
+
+    /** 挂上开机动画层（旧层先移除，避免叠加） */
+    private void showLaunchSplash() {
+        if (launchSplash != null && launchSplash.getParent() instanceof android.view.ViewGroup) {
+            ((android.view.ViewGroup) launchSplash.getParent()).removeView(launchSplash);
         }
+        launchSplash = new com.fongmi.android.tv.ui.custom.LaunchSplashView(this);
+        ((android.view.ViewGroup) findViewById(android.R.id.content)).addView(launchSplash);
     }
 
     private final List<Vod> mIqiyiRecommends = new ArrayList<>();
@@ -872,9 +884,13 @@ private void removeDoubanRow() {
             onCategoryClick(0);
         } else if (mBinding.recycler.getVisibility() == View.VISIBLE && mBinding.recycler.getSelectedPosition() != 0) {
             mBinding.recycler.scrollToPosition(0);
+        } else if (SystemClock.elapsedRealtime() - lastBackAt < 2000) {
+            // 首页返回 = 彻底退出：杀掉进程，保证下次打开必然冷启动走开机动画
+            finishAffinity();
+            App.post(() -> android.os.Process.killProcess(android.os.Process.myPid()), 400);
         } else {
-            if (PlaybackService.isRunning()) moveTaskToBack(true);
-            else super.onBackInvoked();
+            lastBackAt = SystemClock.elapsedRealtime();
+            Toast.makeText(this, R.string.exit_hint, Toast.LENGTH_SHORT).show();
         }
     }
 

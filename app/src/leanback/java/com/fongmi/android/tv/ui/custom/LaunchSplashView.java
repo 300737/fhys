@@ -60,6 +60,12 @@ public class LaunchSplashView extends View {
         return !sProcessDone && (sStartAt < 0 || SystemClock.elapsedRealtime() - sStartAt < DURATION);
     }
 
+    /** 重置状态以重播动画（从桌面再次启动时调用） */
+    public static void reset() {
+        sProcessDone = false;
+        sStartAt = -1;
+    }
+
     public LaunchSplashView(Context context) {
         this(context, null);
     }
