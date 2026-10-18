@@ -4,14 +4,21 @@ import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.util.Log;
+import android.view.Surface;
+import android.view.SurfaceView;
+import android.view.View;
 import android.view.WindowManager;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
+import androidx.media3.common.C;
 import androidx.media3.common.MediaMetadata;
 import androidx.media3.common.Player;
+import androidx.media3.common.Tracks;
 import androidx.media3.common.VideoSize;
 import androidx.media3.exoplayer.drm.FrameworkMediaDrm;
 import androidx.media3.session.MediaController;
@@ -316,7 +323,64 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
 
     @Override
     public void onVideoSizeChanged(@NonNull VideoSize size) {
+        applyFrameRate();
         if (isOwner()) onSizeChanged(size);
+    }
+
+    /**
+     * 帧率自适应输出：把视频真实帧率声明给系统合成器，
+     * 支持的设备（如 SHIELD）会自动把显示刷新率切到视频帧率的整数倍，
+     * 24p 电影不再经过 3:2 pulldown 造成的不均匀抖动。
+     * 不支持的设备该调用是无害 no-op，任何异常都不影响播放。
+     * 注意：media3 的 VideoSize 没有 frameRate，帧率在选中视频轨道的 Format.frameRate 里。
+     */
+    private void applyFrameRate() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return;
+        if (mService == null || player() == null) {
+            Log.d("FrameRate", "skip | service/player not ready");
+            return;
+        }
+        float rate = getVideoFrameRate();
+        if (rate <= 0f) {
+            Log.d("FrameRate", "skip | video frame rate unknown (" + rate + ")");
+            return;
+        }
+        View video = getExoView().getVideoSurfaceView();
+        if (!(video instanceof SurfaceView)) {
+            Log.d("FrameRate", "skip | video surface is not SurfaceView");
+            return;
+        }
+        Surface surface = ((SurfaceView) video).getHolder().getSurface();
+        if (surface == null || !surface.isValid()) {
+            Log.d("FrameRate", "skip | surface not valid");
+            return;
+        }
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                surface.setFrameRate(rate, Surface.FRAME_RATE_COMPATIBILITY_FIXED_SOURCE, Surface.CHANGE_FRAME_RATE_ALWAYS);
+            } else {
+                surface.setFrameRate(rate, Surface.FRAME_RATE_COMPATIBILITY_FIXED_SOURCE);
+            }
+            Log.d("FrameRate", "setFrameRate(" + rate + "fps) requested");
+        } catch (Exception e) {
+            Log.d("FrameRate", "setFrameRate failed: " + e);
+        }
+    }
+
+    /** 从当前选中的视频轨道取帧率，取不到返回 0 */
+    private float getVideoFrameRate() {
+        try {
+            for (Tracks.Group group : player().getCurrentTracks().getGroups()) {
+                if (group.getType() != C.TRACK_TYPE_VIDEO) continue;
+                for (int i = 0; i < group.length; i++) {
+                    if (group.isTrackSelected(i)) return group.getTrackFormat(i).frameRate;
+                }
+                return group.getTrackFormat(0).frameRate;
+            }
+        } catch (Exception e) {
+            Log.d("FrameRate", "frame rate lookup failed: " + e);
+        }
+        return 0f;
     }
 
     @Override
