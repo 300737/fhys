@@ -90,7 +90,7 @@ jobs:
       # 签名密钥不入库，两个 Secret 各管一版：
       #   KEYSTORE_BASE64        → tvbox-test.jks          （电视版 leanback）
       #   MOBILE_KEYSTORE_BASE64 → tiantian_potian.keystore（手机版 mobile）
-      # 某一版密钥未配置时该版退化为 Debug 包，保证流水线始终有产物。
+      # 只出正式版 Release 包；某个 Secret 缺失时直接失败，不再退化为 Debug 测试包。
       - name: Restore signing keys
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
@@ -102,7 +102,7 @@ jobs:
             echo "TV signing key restored."
           else
             echo "has_tv_key=false" >> "$GITHUB_ENV"
-            echo "No KEYSTORE_BASE64 secret, leanback will build Debug instead."
+            echo "::error::KEYSTORE_BASE64 未配置，无法产出已签名的 Leanback Release 包"
           fi
           if [ -n "$MOBILE_KEYSTORE_BASE64" ]; then
             echo "$MOBILE_KEYSTORE_BASE64" | base64 -d > tiantian_potian.keystore
@@ -110,7 +110,7 @@ jobs:
             echo "Mobile signing key restored."
           else
             echo "has_mobile_key=false" >> "$GITHUB_ENV"
-            echo "No MOBILE_KEYSTORE_BASE64 secret, mobile will build Debug instead."
+            echo "::error::MOBILE_KEYSTORE_BASE64 未配置，无法产出已签名的 Mobile Release 包"
           fi
 
       - name: Resolve which flavors to build
@@ -132,20 +132,25 @@ jobs:
         run: |
           if [ "${{ matrix.flavor }}" = "leanback" ]; then
             signed=$has_tv_key
+            secret_name=KEYSTORE_BASE64
           else
             signed=$has_mobile_key
+            secret_name=MOBILE_KEYSTORE_BASE64
           fi
-          if [ "$signed" = "true" ]; then
-            ./gradlew :app:assemble${{ matrix.target }}Release --no-daemon --stacktrace
-          else
-            ./gradlew :app:assemble${{ matrix.target }}Debug --no-daemon --stacktrace
+          # 只出 Release；没有签名就不出包，避免混进 Debug 测试包
+          if [ "$signed" != "true" ]; then
+            echo "::error::缺少 $secret_name，${{ matrix.target }} 无法签名 Release 包"
+            exit 1
           fi
+          ./gradlew :app:assemble${{ matrix.target }}Release --no-daemon --stacktrace
 
       - name: Upload ${{ matrix.target }} APK
         if: steps.pick.outputs.run == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: apk-${{ matrix.flavor }}-${{ matrix.abi }}
-          path: app/build/outputs/apk/**/*.apk
-          if-no-files-found: warn
+          name: apk-${{ matrix.flavor }}-${{ matrix.abi }}-release
+          path: |
+            app/build/outputs/apk/**/release/*.apk
+            app/build/outputs/apk/**/*.apk
+          if-no-files-found: error
           retention-days: 30
