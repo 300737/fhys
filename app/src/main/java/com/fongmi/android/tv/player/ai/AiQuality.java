@@ -2,6 +2,14 @@ package com.fongmi.android.tv.player.ai;
 
 import android.util.Log;
 
+import androidx.annotation.Nullable;
+import androidx.media3.common.C;
+import androidx.media3.common.ColorInfo;
+import androidx.media3.common.Format;
+import androidx.media3.common.Player;
+import androidx.media3.common.Tracks;
+import androidx.media3.common.VideoSize;
+
 import com.github.catvod.utils.Prefers;
 
 /**
@@ -41,6 +49,60 @@ public class AiQuality {
     /** 引擎是否启用（总开关：非基本档即启用管线） */
     public static boolean isEnabled() {
         return getLevel() != BASIC;
+    }
+
+    /**
+     * 【自动直出判定，写死不可关】
+     * 1080P 及以上（宽≥1920 或 高≥1080）或 HDR / 杜比视界源，一律原画直出，
+     * 只有低清老片（720P 以下 SDR）才允许开滤镜。
+     *
+     * <p>原因：软件管线对高清源是负优化——高清本身细节充足，锐化只会放大噪点、
+     * 变形人脸；HDR/杜比视界经 OES→FBO→窗口两跳渲染还会损失动态范围。
+     * 滤镜的价值场景只有低清老片（≤720P SDR）的超分与降噪。
+     */
+    public static boolean shouldBypass(@Nullable VideoSize size, @Nullable Format format) {
+        int w = size == null ? 0 : size.width;
+        int h = size == null ? 0 : size.height;
+        if (w >= 1920 || h >= 1080) {
+            Log.d(TAG, "auto bypass | " + w + "x" + h + " >= 1080P, direct output (no filters)");
+            return true;
+        }
+        if (format != null) {
+            String mime = format.sampleMimeType;
+            if (mime != null && (mime.contains("dvh") || mime.contains("dva") || mime.contains("dolby"))) {
+                Log.d(TAG, "auto bypass | Dolby Vision source, direct output");
+                return true;
+            }
+            ColorInfo ci = format.colorInfo;
+            if (ci != null && (ci.colorTransfer == C.COLOR_TRANSFER_ST2084
+                    || ci.colorTransfer == C.COLOR_TRANSFER_HLG)) {
+                Log.d(TAG, "auto bypass | HDR (PQ/HLG) source, direct output");
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 从播放器当前轨道取选中的视频 Format。
+     * media3 的 Player 接口不暴露 getVideoFormat()，只能从 Tracks 里拿选中轨道的格式，
+     * HDR/杜比视界的判定信息（colorTransfer、采样 mime）都在这里。
+     */
+    @Nullable
+    public static Format getVideoFormat(@Nullable Player player) {
+        if (player == null) return null;
+        try {
+            for (Tracks.Group group : player.getCurrentTracks().getGroups()) {
+                if (group.getType() != C.TRACK_TYPE_VIDEO) continue;
+                for (int i = 0; i < group.length; i++) {
+                    if (group.isTrackSelected(i)) return group.getTrackFormat(i);
+                }
+                return group.getTrackFormat(0);
+            }
+        } catch (Exception e) {
+            Log.d(TAG, "video format lookup failed: " + e);
+        }
+        return null;
     }
 
     /** 当前档位，默认基本（原画） */

@@ -59,6 +59,19 @@ public class AiQualitySurface implements SurfaceHolder.Callback, GLQualityPipeli
                     + " enabled=" + AiQuality.isEnabled());
             return null;
         }
+        // 【自动直出】1080P+/HDR/杜比视界一律不开滤镜，管线条数再多也是负优化
+        VideoSize size = player.getVideoSize();
+        // 尺寸未知（刚 startPlayer、第一帧还没解出来）时绝不挂管线：
+        // 否则拿到 1080P+/4K 源后要靠 onVideoSizeChanged 来拆，而重播同分辨率视频
+        // 不会再触发该回调，管线就永远挂在高清源上（实测负优化根因）
+        if (size == null || size.width <= 0 || size.height <= 0) {
+            Log.d(AiQuality.TAG, "attach deferred | video size unknown, wait for onVideoSizeChanged");
+            return null;
+        }
+        if (AiQuality.shouldBypass(size, AiQuality.getVideoFormat(player))) {
+            Log.d(AiQuality.TAG, "attach skipped | auto bypass, direct output");
+            return null;
+        }
         AiQualitySurface holder = new AiQualitySurface(view, player);
         return holder.bind() ? holder : null;
     }
@@ -152,6 +165,13 @@ public class AiQualitySurface implements SurfaceHolder.Callback, GLQualityPipeli
             if (released || surfaceView == null) return;
             if (!player.isCommandAvailable(Player.COMMAND_SET_VIDEO_SURFACE)) {
                 Log.w(AiQuality.TAG, "COMMAND_SET_VIDEO_SURFACE unavailable, fallback");
+                fallback();
+                return;
+            }
+            // 劫持前最后一道复核：attach 到 onReady 有几百毫秒窗口，
+            // 期间若分辨率/HDR 信息已就位且命中自动直出条件，必须放弃劫持
+            if (AiQuality.shouldBypass(player.getVideoSize(), AiQuality.getVideoFormat(player))) {
+                Log.d(AiQuality.TAG, "hijack cancelled | auto bypass fired between attach and ready, direct output");
                 fallback();
                 return;
             }
