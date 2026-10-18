@@ -123,6 +123,7 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
     private ServiceConnection mPlaybackServiceConnection;
     private PlaybackService mPlaybackService;
     private PlayerView mPreviewPlayerView;
+    private com.fongmi.android.tv.ui.custom.LaunchSplashView launchSplash;
     private Observer<Result> mObserveLiveUrl;
     private final BroadcastReceiver mNetworkReceiver = new BroadcastReceiver() {
         @Override
@@ -154,6 +155,12 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
     protected void onCreate(Bundle savedInstanceState) {
         SplashScreen.installSplashScreen(this);
         super.onCreate(savedInstanceState);
+        // 冷启动开机动画：4K视界式全屏大图 + 进度状态 + 招牌金字，5 秒，任意按键跳过
+        // 启动途中 Activity 可能被 recreate，shouldShow() 保证重建后自动补挂并接续剩余时间
+        if (com.fongmi.android.tv.ui.custom.LaunchSplashView.shouldShow()) {
+            launchSplash = new com.fongmi.android.tv.ui.custom.LaunchSplashView(this);
+            ((android.view.ViewGroup) findViewById(android.R.id.content)).addView(launchSplash);
+        }
     }
 
     private final List<Vod> mIqiyiRecommends = new ArrayList<>();
@@ -814,6 +821,10 @@ private void removeDoubanRow() {
 
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
+        if (launchSplash != null && launchSplash.getParent() != null) {
+            launchSplash.skip();
+            launchSplash = null;
+        }
         if (KeyUtil.isMenuKey(event)) showDialog();
         if (KeyUtil.isActionDown(event) && KeyUtil.isDownKey(event) && isToolbarFocused()) {
             if (mBinding.recyclerType.getVisibility() == View.VISIBLE) {
