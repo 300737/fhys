@@ -8,12 +8,14 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 OUT = r"C:\Users\Administrator\Desktop\tvbox-src-20261016-1740\app\src\leanback\res\drawable-nodpi"
 
-PAPER = (243, 228, 206, 255)      # 米黄做旧纸
-PAPER_D = (226, 205, 175, 255)
-BLUSH = (232, 196, 196, 255)      # 外圈粉色做旧
-BLUSH_D = (214, 168, 168, 255)
-CREAM = (250, 244, 228, 255)      # 米白细环
-INK = (43, 33, 24, 255)           # 深褐黑
+CHAMPAGNE = (226, 197, 150, 255)      # 香槟金外圈
+CHAMPAGNE_D = (183, 148, 98, 255)     # 香槟金暗部
+CHAMPAGNE_L = (248, 232, 198, 255)    # 香槟金高光
+ROSE = (183, 110, 121, 255)           # 玫瑰金（指针）
+ROSE_D = (148, 82, 94, 255)
+ROSE_L = (214, 152, 160, 255)
+FROST = (244, 240, 236, 178)          # 内圈磨砂：半透明浅色，深蓝会透上来
+INK = (62, 48, 40, 255)               # 深褐刻度/数字
 
 
 def italic_font(size):
@@ -75,59 +77,71 @@ def make_dial(S=1024):
     R = S * 0.485
     img = Image.new("RGBA", (S, S), (0, 0, 0, 0))
 
-    # ---- 外圈：粉色做旧纸 ----
-    blush = paper_layer(S, BLUSH, seed=11, blotch=0.20, vig=0.20)
+    # ---- 外圈：香槟金（带做旧斑驳与暗角，金属不至于太"塑料"）----
+    gold = paper_layer(S, CHAMPAGNE, seed=11, blotch=0.14, vig=0.16)
     mask = Image.new("L", (S, S), 0)
     ImageDraw.Draw(mask).ellipse([c - R, c - R, c + R, c + R], fill=255)
-    img.paste(blush, (0, 0), mask)
+    img.paste(gold, (0, 0), mask)
 
-    # ---- 米白细环 ----
     d = ImageDraw.Draw(img)
-    d.ellipse([c - R * 0.945, c - R * 0.945, c + R * 0.945, c + R * 0.945], fill=CREAM)
-    d.ellipse([c - R * 0.925, c - R * 0.925, c + R * 0.925, c + R * 0.925], fill=BLUSH_D)
+    # 外圈内缘压一道暗金，做出"圈"的厚度
+    d.ellipse([c - R * 0.955, c - R * 0.955, c + R * 0.955, c + R * 0.955],
+              fill=CHAMPAGNE_D)
+    # 高光环：左上受光
+    hl = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+    ImageDraw.Draw(hl).arc([c - R * 0.97, c - R * 0.97, c + R * 0.97, c + R * 0.97],
+                           start=150, end=330, fill=CHAMPAGNE_L, width=int(S * 0.014))
+    hl = hl.filter(ImageFilter.GaussianBlur(S * 0.008))
+    img.alpha_composite(hl)
+    d = ImageDraw.Draw(img)
 
-    # ---- 刻度带：黑白相间小竖条 ----
+    # ---- 内圈：磨砂半透明浅色，深蓝背景会透上来 ----
     inner = R * 0.845
+    frost = Image.new("RGBA", (S, S), FROST)
+    # 磨砂颗粒
+    rng = np.random.default_rng(7)
+    noise = (rng.random((S, S)) * 26).astype("uint8")
+    frost.putalpha(Image.fromarray(noise, "L").point(lambda v: FROST[3]))
+    # 用噪点调制 alpha，得到不均匀的磨砂质感
+    fa = np.asarray(frost.split()[3], dtype=np.float32) + (np.asarray(noise, dtype=np.float32) - 13)
+    frost.putalpha(Image.fromarray(np.clip(fa, 0, 255).astype("uint8"), "L"))
+    fmask = Image.new("L", (S, S), 0)
+    ImageDraw.Draw(fmask).ellipse([c - inner, c - inner, c + inner, c + inner], fill=255)
+    img.paste(frost, (0, 0), fmask)
+    d = ImageDraw.Draw(img)
+
+    # ---- 刻度带：深褐 + 玫瑰金相间 ----
     for i in range(60):
         ang = math.radians(i * 6)
         hour = (i % 5 == 0)
         r1 = inner * (0.86 if hour else 0.92)
-        r2 = inner * 1.0
+        r2 = inner * 0.995
         w = (S * 0.0125) if hour else (S * 0.0072)
-        col = INK if (i % 2 == 0) else (252, 250, 244, 255)
+        col = ROSE_D if hour else INK
         pts = []
         for (rr, ww) in ((r1, w), (r1, -w), (r2, -w), (r2, w)):
             pts.append((c + rr * math.sin(ang) + ww * math.cos(ang),
                         c - rr * math.cos(ang) + ww * math.sin(ang)))
         d.polygon(pts, fill=col)
 
-    # ---- 米黄盘面 ----
-    dial = paper_layer(S, PAPER, seed=23, blotch=0.15, vig=0.20)
-    dmask = Image.new("L", (S, S), 0)
-    ImageDraw.Draw(dmask).ellipse([c - inner * 0.86, c - inner * 0.86,
-                                   c + inner * 0.86, c + inner * 0.86], fill=255)
-    img.paste(dial, (0, 0), dmask)
-    d = ImageDraw.Draw(img)
-
-    # ---- 斜体数字 1-12 ----
-    f = italic_font(int(S * 0.135))
+    # ---- 数字 1-12：深褐粗体 ----
+    f = bold_font(int(S * 0.125))
     for i in range(1, 13):
         ang = math.radians(i * 30 - 90)
         tr = inner * 0.70
         x = c + tr * math.cos(ang)
         y = c + tr * math.sin(ang)
         bb = d.textbbox((0, 0), str(i), font=f)
-        # 轻微倾斜，强化参考图的手写斜体感
         d.text((x - (bb[2] - bb[0]) / 2 - bb[0], y - (bb[3] - bb[1]) / 2 - bb[1]),
                str(i), font=f, fill=INK)
 
-    # ---- 中心小圆环 ----
-    rr = S * 0.030
-    d.ellipse([c - rr, c - rr, c + rr, c + rr], outline=INK, width=int(S * 0.006))
-    d.ellipse([c - rr * 0.42, c - rr * 0.42, c + rr * 0.42, c + rr * 0.42], fill=INK)
+    # ---- 中心：玫瑰金轴帽 ----
+    rr = S * 0.028
+    d.ellipse([c - rr, c - rr, c + rr, c + rr], fill=ROSE)
+    d.ellipse([c - rr * 0.45, c - rr * 0.45, c + rr * 0.45, c + rr * 0.45], fill=ROSE_D)
 
     img.save(os.path.join(OUT, "ic_clock_dial.png"))
-    print("ic_clock_dial.png", img.size, "四角透明")
+    print("ic_clock_dial.png", img.size, "四角透明，内圈 alpha=178 半透明")
 
 
 def make_hand(name, length, width, color, tail=0.0):
@@ -160,8 +174,8 @@ R = S * 0.485
 INNER = R * 0.845
 
 make_dial(S)
-make_hand("ic_clock_hour.png",   length=int(INNER * 0.50), width=int(S * 0.026), color=INK)
-make_hand("ic_clock_minute.png", length=int(INNER * 0.72), width=int(S * 0.018), color=INK)
-make_hand("ic_clock_second.png", length=int(INNER * 0.82), width=int(S * 0.009),
-          color=INK, tail=int(S * 0.07))
+make_hand("ic_clock_hour.png",   length=int(INNER * 0.50), width=int(S * 0.026), color=ROSE_D)
+make_hand("ic_clock_minute.png", length=int(INNER * 0.72), width=int(S * 0.018), color=ROSE)
+make_hand("ic_clock_second.png", length=int(INNER * 0.82), width=int(S * 0.0115),
+          color=ROSE_D, tail=int(S * 0.07))
 print("done ->", OUT)
