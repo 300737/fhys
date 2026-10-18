@@ -104,12 +104,19 @@ public final class GLQualityPipeline implements SurfaceTexture.OnFrameAvailableL
     /** FBO 纹理固定按显示尺寸分配一次，档位切换只改视口，不做重新分配（避免闪屏与额外开销） */
     private int fboAllocWidth = 1;
     private int fboAllocHeight = 1;
+    /** FBO 是否为浮点格式（RGBA16F，HDR/高码率源不发灰；设备不支持时回退 RGBA8） */
+    private boolean fboFloat;
     /**
-     * Pass1（EASU）本帧的渲染尺寸：
-     * AI 增强档 = 显示尺寸（放大到屏幕/伪 4K 缓冲），增强档 = 源尺寸（1:1，零缩放损失、更省电）。
+     * Pass1（EASU）本帧的渲染尺寸：始终等比（宽高比 == 源视频），杜绝拉伸。
+     * AI 增强档 = 等比放大到铺满显示区；增强档 = 不超过 1:1（省电、零缩放损失）。
      */
     private int passWidth = 1;
     private int passHeight = 1;
+    /** 屏幕上实际绘制画面的居中矩形（等比 letterbox，黑边由每帧 glClear 填充） */
+    private int contentX;
+    private int contentY;
+    private int contentWidth = 1;
+    private int contentHeight = 1;
 
     // ---- 调试埋点：每 2 秒汇总一次真实处理量 ----
     private long frameCount;
@@ -297,13 +304,22 @@ public final class GLQualityPipeline implements SurfaceTexture.OnFrameAvailableL
         decoderTexture.setOnFrameAvailableListener(this);
         decoderSurface = new Surface(decoderTexture);
 
-        // FBO：Pass1 的输出，按显示分辨率分配（4K 屏即 4K 缓冲）
+        // FBO：Pass1 的输出，按显示分辨率分配（4K 屏即 4K 缓冲）。
+        // 优先 RGBA16F 浮点格式：HDR/高码率源经 8bit 中转会明显发灰、出现色带，
+        // 浮点缓冲保住动态范围（需 EXT_color_buffer_float，神盾 Tegra 支持）。
         int[] fboTex = new int[1];
         GLES30.glGenTextures(1, fboTex, 0);
         fboTexId = fboTex[0];
         GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, fboTexId);
-        GLES30.glTexImage2D(GLES30.GL_TEXTURE_2D, 0, GLES30.GL_RGBA, dstWidth, dstHeight, 0,
-                GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, null);
+        String ext = GLES30.glGetString(GLES30.GL_EXTENSIONS);
+        fboFloat = ext != null && ext.contains("EXT_color_buffer_float");
+        if (fboFloat) {
+            GLES30.glTexImage2D(GLES30.GL_TEXTURE_2D, 0, GLES30.GL_RGBA16F, dstWidth, dstHeight, 0,
+                    GLES30.GL_RGBA, GLES30.GL_HALF_FLOAT, null);
+        } else {
+            GLES30.glTexImage2D(GLES30.GL_TEXTURE_2D, 0, GLES30.GL_RGBA, dstWidth, dstHeight, 0,
+                    GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, null);
+        }
         GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_LINEAR);
         GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_LINEAR);
         GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_S, GLES30.GL_CLAMP_TO_EDGE);
@@ -314,6 +330,15 @@ public final class GLQualityPipeline implements SurfaceTexture.OnFrameAvailableL
         fboId = fbos[0];
         GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, fboId);
         GLES30.glFramebufferTexture2D(GLES30.GL_FRAMEBUFFER, GLES30.GL_COLOR_ATTACHMENT0, GLES30.GL_TEXTURE_2D, fboTexId, 0);
+        if (fboFloat && GLES30.glCheckFramebufferStatus(GLES30.GL_FRAMEBUFFER) != GLES30.GL_FRAMEBUFFER_COMPLETE) {
+            // 扩展声明了但帧缓冲不完整（个别驱动虚报），回退 8bit 保证能出图
+            Log.w(AiQuality.TAG, "RGBA16F fbo incomplete, fallback to RGBA8");
+            fboFloat = false;
+            GLES30.glTexImage2D(GLES30.GL_TEXTURE_2D, 0, GLES30.GL_RGBA, dstWidth, dstHeight, 0,
+                    GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, null);
+            GLES30.glFramebufferTexture2D(GLES30.GL_FRAMEBUFFER, GLES30.GL_COLOR_ATTACHMENT0, GLES30.GL_TEXTURE_2D, fboTexId, 0);
+        }
+        Log.d(AiQuality.TAG, "fbo format=" + (fboFloat ? "RGBA16F" : "RGBA8") + " | alloc=" + dstWidth + "x" + dstHeight);
         GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, 0);
         fboAllocWidth = dstWidth;
         fboAllocHeight = dstHeight;
@@ -395,7 +420,7 @@ public final class GLQualityPipeline implements SurfaceTexture.OnFrameAvailableL
 
     /** 用最近一次消费的解码帧走完整渲染并上屏（挂载完成后的补渲染也走这里） */
     private void renderFrame() {
-        updatePassSize();
+        updateLayout();
         renderEasu();
         renderPost();
         EGL14.eglSwapBuffers(eglDisplay, eglSurface);
@@ -427,20 +452,51 @@ public final class GLQualityPipeline implements SurfaceTexture.OnFrameAvailableL
     }
 
     /**
-     * 按当前档位计算 Pass1 的渲染尺寸（每帧调用，切档下一帧立即生效）：
-     * <ul>
-     *   <li>AI增强档 —— 渲染到显示尺寸（或伪 4K 缓冲），EASU 放大重建细节</li>
-     *   <li>增强档   —— 渲染到源尺寸，1:1 只做 CAS 锐化，省电且零缩放损失</li>
-     * </ul>
-     * 渲染尺寸不会超过 FBO 分配尺寸，因此无需重新分配纹理。
+     * 每帧重算布局（GL 线程调用）：
+     * <ol>
+     *   <li>重新查询窗口实际尺寸——PlayerView 会在拿到视频比例后重排 SurfaceView
+     *       （如 2.39:1 影片把 1920x1080 全窗口缩成 1920x803），管线必须跟上，
+     *       否则按旧尺寸渲染就会把画面拉变形；</li>
+     *   <li>按【等比缩放】计算 Pass1 尺寸与屏幕内容矩形，宽高比恒等于源视频，
+     *       装不下的部分留黑边（letterbox），绝不单向拉伸。</li>
+     * </ol>
+     * 修复：旧逻辑对宽高各自 min(src,dst)，比例不一致时画面纵向/横向拉伸。
      */
-    private void updatePassSize() {
-        if (AiQuality.needUpscale()) {
-            passWidth = dstWidth;
-            passHeight = dstHeight;
-        } else {
-            passWidth = Math.min(srcWidth, dstWidth);
-            passHeight = Math.min(srcHeight, dstHeight);
+    private void updateLayout() {
+        // 1. 窗口实际尺寸（视图中途 resize 也能逐帧跟随）
+        int[] value = new int[1];
+        int winW = EGL14.eglQuerySurface(eglDisplay, eglSurface, EGL_WIDTH, value, 0) && value[0] > 0 ? value[0] : dstWidth;
+        int winH = EGL14.eglQuerySurface(eglDisplay, eglSurface, EGL_HEIGHT, value, 0) && value[0] > 0 ? value[0] : dstHeight;
+        if (winW != outWidth || winH != outHeight) {
+            Log.d(AiQuality.TAG, "window resized " + outWidth + "x" + outHeight + " -> " + winW + "x" + winH);
+            outWidth = winW;
+            outHeight = winH;
+        }
+
+        // 2. 等比缩放系数：铺满显示区（取 min，多出的维度留黑边）
+        float fit = Math.min((float) outWidth / srcWidth, (float) outHeight / srcHeight);
+        // AI 增强档：等比放大到铺满；增强档：最多 1:1，不做放大（省电、零缩放损失）
+        float scale = AiQuality.needUpscale() ? fit : Math.min(1f, fit);
+
+        int pw = Math.max(1, Math.round(srcWidth * scale));
+        int ph = Math.max(1, Math.round(srcHeight * scale));
+        // 屏幕内容矩形（居中 letterbox）
+        int cw = Math.max(1, Math.round(srcWidth * fit));
+        int ch = Math.max(1, Math.round(srcHeight * fit));
+        int cx = (outWidth - cw) / 2;
+        int cy = (outHeight - ch) / 2;
+
+        if (pw != passWidth || ph != passHeight || cw != contentWidth || ch != contentHeight) {
+            passWidth = pw;
+            passHeight = ph;
+            contentX = cx;
+            contentY = cy;
+            contentWidth = cw;
+            contentHeight = ch;
+            Log.d(AiQuality.TAG, "layout | window=" + outWidth + "x" + outHeight
+                    + " | content=" + contentWidth + "x" + contentHeight + " (" + contentX + "," + contentY + ")"
+                    + " | pass1=" + passWidth + "x" + passHeight
+                    + " | src=" + srcWidth + "x" + srcHeight);
         }
     }
 
@@ -463,9 +519,18 @@ public final class GLQualityPipeline implements SurfaceTexture.OnFrameAvailableL
         GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, 0);
     }
 
-    /** Pass2：FBO → CAS 锐化 / 降噪 / 色彩 → 显示 Surface（视口用屏幕尺寸，缓冲更大时自动缩放） */
+    /**
+     * Pass2：FBO → CAS 锐化 / 饱和度补偿 / 降噪 → 显示 Surface。
+     * 只把画面画到等比内容矩形上，黑边由每帧的 glClear 填充（window surface
+     * 默认 swap 行为不清保内容，必须每帧重刷）。
+     */
     private void renderPost() {
+        // 先清整屏为黑（letterbox 黑边），窗口尺寸可能与内容矩形不同
         GLES30.glViewport(0, 0, outWidth, outHeight);
+        GLES30.glClearColor(0f, 0f, 0f, 1f);
+        GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT);
+        // 再把画面画到居中内容矩形
+        GLES30.glViewport(contentX, contentY, contentWidth, contentHeight);
         GLES30.glUseProgram(postProgram);
         bindGeometry(postProgram);
 
@@ -476,15 +541,18 @@ public final class GLQualityPipeline implements SurfaceTexture.OnFrameAvailableL
         // （若沿用解码 OES 变换矩阵，翻转/裁切会被应用两次导致画面错乱）
         android.opengl.Matrix.setIdentityM(texMatrix, 0);
         GLES30.glUniformMatrix4fv(GLES30.glGetUniformLocation(postProgram, "uTexMatrix"), 1, false, texMatrix, 0);
-        // 采样区只覆盖 Pass1 实际渲染到的部分（增强档只用了 FBO 左上角的源尺寸区域）
+        // 采样区只覆盖 Pass1 实际渲染到的部分
         GLES30.glUniform2f(GLES30.glGetUniformLocation(postProgram, "uUvScale"),
-                (float) passWidth / dstWidth, (float) passHeight / dstHeight);
+                (float) passWidth / fboAllocWidth, (float) passHeight / fboAllocHeight);
         GLES30.glUniform2f(GLES30.glGetUniformLocation(postProgram, "uTexel"), 1f / fboAllocWidth, 1f / fboAllocHeight);
         GLES30.glUniform1f(GLES30.glGetUniformLocation(postProgram, "uSharpness"),
                 AiQuality.needSharpen() ? AiQuality.getSharpness() : 0f);
         GLES30.glUniform1f(GLES30.glGetUniformLocation(postProgram, "uDenoise"),
                 AiQuality.needEnhance() ? AiQuality.getDenoise() : 0f);
         GLES30.glUniform1f(GLES30.glGetUniformLocation(postProgram, "uEnhance"), AiQuality.needEnhance() ? 1f : 0f);
+        // 饱和度补偿：管线链路（OES→FBO→窗口）比解码直出偏灰，按档位拉回
+        GLES30.glUniform1f(GLES30.glGetUniformLocation(postProgram, "uSaturation"),
+                AiQuality.needEnhance() ? 1.18f : 1.12f);
 
         GLES30.glDrawArrays(GLES30.GL_TRIANGLE_STRIP, 0, 4);
     }
