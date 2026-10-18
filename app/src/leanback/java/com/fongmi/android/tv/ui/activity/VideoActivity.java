@@ -61,7 +61,6 @@ import com.fongmi.android.tv.player.PlayerHelper;
 import com.fongmi.android.tv.player.PlayerManager;
 import com.fongmi.android.tv.service.PlaybackService;
 import com.fongmi.android.tv.setting.DanmakuSetting;
-import com.fongmi.android.tv.player.ai.AiQuality;
 import com.fongmi.android.tv.setting.PlayerSetting;
 import com.fongmi.android.tv.setting.Setting;
 import com.fongmi.android.tv.ui.adapter.ArrayAdapter;
@@ -74,7 +73,6 @@ import com.fongmi.android.tv.ui.adapter.QuickAdapter;
 import com.fongmi.android.tv.ui.custom.CustomKeyDownVod;
 import com.fongmi.android.tv.ui.custom.CustomMovement;
 import com.fongmi.android.tv.ui.custom.CustomSeekView;
-import com.fongmi.android.tv.ui.dialog.AiQualityDialog;
 import com.fongmi.android.tv.ui.dialog.ContentDialog;
 import com.fongmi.android.tv.ui.dialog.DanmakuDialog;
 import com.fongmi.android.tv.ui.dialog.SubtitleDialog;
@@ -363,7 +361,6 @@ public class VideoActivity extends PlaybackActivity implements CustomKeyDownVod.
         mBinding.control.action.next.setOnClickListener(view -> checkNext());
         mBinding.control.action.prev.setOnClickListener(view -> checkPrev());
         mBinding.control.action.scale.setOnClickListener(view -> onScale());
-        mBinding.control.action.ai.setOnClickListener(view -> onAiQuality());
         mBinding.control.action.speed.setOnClickListener(view -> onSpeed());
         mBinding.control.action.reset.setOnClickListener(view -> onReset());
         mBinding.control.action.title.setOnClickListener(view -> onTitle());
@@ -440,20 +437,6 @@ public class VideoActivity extends PlaybackActivity implements CustomKeyDownVod.
         mHistory.setScale(scale);
         mBinding.exo.setResizeMode(scale);
         mBinding.control.action.scale.setText(ResUtil.getStringArray(R.array.select_scale)[scale]);
-    }
-
-    /** AI画质：打开播放页内的画质面板，三档 + 锐化/降噪强度，改动实时作用于底层渲染管线 */
-    private void onAiQuality() {
-        AiQualityDialog.create(this::onAiQualityChanged).show(this);
-    }
-
-    private void onAiQualityChanged() {
-        updateAiQuality();
-        setAiQualityText();
-    }
-
-    private void setAiQualityText() {
-        mBinding.control.action.ai.setText(ResUtil.getStringArray(R.array.select_ai_quality)[AiQuality.getLevel()]);
     }
 
     private void setViewModel() {
@@ -1268,7 +1251,6 @@ public class VideoActivity extends PlaybackActivity implements CustomKeyDownVod.
         mHistory.setVodName(item.getName());
         setArtwork(!item.getBanner().isEmpty() ? item.getBanner() : item.getPic());
         setScale(getScale());
-        setAiQualityText();
         setPartAdapter();
     }
 
@@ -1432,8 +1414,6 @@ public class VideoActivity extends PlaybackActivity implements CustomKeyDownVod.
             case Player.STATE_READY:
                 hideProgress();
                 player().reset();
-                // 起播就绪后再兜底挂载画质管线（startPlayer 阶段 player 可能尚未就绪）
-                updateAiQuality();
                 break;
             case Player.STATE_ENDED:
                 checkEnded(true);

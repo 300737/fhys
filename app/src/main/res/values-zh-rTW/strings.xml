@@ -48,7 +48,6 @@
     <string name="play_timer">定時</string>
     <string name="play_title">章節</string>
     <string name="play_scale">原始</string>
-    <string name="play_ai_quality">AI畫質</string>
     <string name="play_config">配置</string>
     <string name="play_change">換源</string>
     <string name="play_invert">反轉</string>
@@ -60,9 +59,6 @@
     <string name="offset_text">字幕偏移</string>
     <string name="offset_audio">音軌偏移</string>
     <string name="offset_setting">偏移設定</string>
-    <string name="ai_quality_setting">AI畫質</string>
-    <string name="ai_quality_sharpness">銳化</string>
-    <string name="ai_quality_denoise">降噪</string>
     <string name="play_forward_hint">已切換正序播放</string>
     <string name="play_backward_hint">已切換倒序播放</string>
     <string name="play_ready">準備播放：<xliff:g name="name">%s</xliff:g></string>
@@ -264,12 +260,6 @@
         <item>4:3</item>
         <item>填充</item>
         <item>裁剪</item>
-    </string-array>
-
-    <string-array name="select_ai_quality">
-        <item>基本</item>
-        <item>增強</item>
-        <item>AI增強</item>
     </string-array>
 
     <string-array name="select_reset">

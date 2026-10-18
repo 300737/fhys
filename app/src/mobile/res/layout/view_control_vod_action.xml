@@ -35,11 +35,6 @@
             android:text="@string/play_scale" />
 
         <com.google.android.material.textview.MaterialTextView
-            android:id="@+id/ai"
-            style="@style/Control"
-            android:text="@string/play_ai_quality" />
-
-        <com.google.android.material.textview.MaterialTextView
             android:id="@+id/reset"
             style="@style/Control"
             android:text="@string/play_reset" />

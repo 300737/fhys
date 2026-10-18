@@ -21,8 +21,6 @@ import androidx.media3.ui.PlayerView;
 import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.bean.Result;
 import com.fongmi.android.tv.player.PlayerManager;
-import com.fongmi.android.tv.player.ai.AiQuality;
-import com.fongmi.android.tv.player.ai.AiQualitySurface;
 import com.fongmi.android.tv.player.engine.PlaySpec;
 import com.fongmi.android.tv.player.exo.ExoUtil;
 import com.fongmi.android.tv.service.PlaybackService;
@@ -43,7 +41,6 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
     private boolean bound;
     private boolean stop;
     private boolean lock;
-    private AiQualitySurface aiQuality;
 
     protected MediaController controller() {
         return mController;
@@ -215,45 +212,10 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
 
     private void attachSurface() {
         if (mService != null && getExoView().getPlayer() == null) getExoView().setPlayer(player().getPlayer());
-        detachQuality();
-        if (mService != null && player() != null) aiQuality = AiQualitySurface.attach(getExoView(), player().getPlayer());
     }
 
     private void detachSurface() {
-        detachQuality();
         getExoView().setPlayer(null);
-    }
-
-    private void detachQuality() {
-        if (aiQuality != null) {
-            aiQuality.release();
-            aiQuality = null;
-        }
-    }
-
-    /**
-     * 画质档位变化后实时生效，调用方（播放页菜单）切换档位时必须调用。
-     * <ul>
-     *   <li>基本（原画）→ 立即拆掉管线，解码器直出，零开销</li>
-     *   <li>增强 / AI增强 → 立即挂上管线（但受【自动直出】约束：1080P+/HDR/杜比视界不开）</li>
-     *   <li>增强 ↔ AI增强 互切 → 管线已挂载时什么都不用做：
-     *       渲染线程每帧读取档位，切换后下一帧立刻按新档位渲染</li>
-     * </ul>
-     */
-    public void updateAiQuality() {
-        if (!AiQuality.isEnabled()) {
-            detachQuality();
-            return;
-        }
-        if (mService != null && player() != null) {
-            Player p = player().getPlayer();
-            // 【自动直出判定】视频分辨率/HDR 信息变化（换源、切清晰度）时同样重新评估
-            if (p != null && AiQuality.shouldBypass(p.getVideoSize(), AiQuality.getVideoFormat(p))) {
-                detachQuality();
-                return;
-            }
-            if (aiQuality == null) aiQuality = AiQualitySurface.attach(getExoView(), p);
-        }
     }
 
     private void setRender() {
@@ -354,9 +316,6 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
 
     @Override
     public void onVideoSizeChanged(@NonNull VideoSize size) {
-        if (aiQuality != null) aiQuality.setSource(size.width, size.height);
-        // 自动直出：起播拿到真实分辨率（或 HDR 信息）后重新评估，1080P+/HDR 拆掉管线
-        updateAiQuality();
         if (isOwner()) onSizeChanged(size);
     }
 
