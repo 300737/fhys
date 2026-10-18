@@ -47,23 +47,6 @@ public class CustomKeyDownVod extends GestureDetector.SimpleOnGestureListener {
     }
 
     private void check(KeyEvent event) {
-        // 【长按右键 = 倍速快进，秒切换】长按期间直接加速播放（isLongPress 首次触发即切），
-        // 松手（ACTION_UP）瞬间恢复原速，不走预览跳段的 holdTime 累计
-        if (event.isLongPress() && KeyUtil.isRightKey(event)) {
-            if (!changeSpeed) {
-                listener.onSpeedUp();
-                changeSpeed = true;
-            }
-            return;
-        }
-        if (changeSpeed && (KeyUtil.isLeftKey(event) || KeyUtil.isRightKey(event))) {
-            if (KeyUtil.isActionUp(event)) {
-                listener.onSpeedEnd();
-                changeSpeed = false;
-                holdTime = 0;
-            }
-            return;
-        }
         if (KeyUtil.isActionDown(event) && KeyUtil.isLeftKey(event)) {
             listener.onSeeking(subTime());
         } else if (KeyUtil.isActionDown(event) && KeyUtil.isRightKey(event)) {

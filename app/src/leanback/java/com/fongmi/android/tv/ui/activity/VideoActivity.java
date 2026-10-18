@@ -1687,7 +1687,6 @@ public class VideoActivity extends PlaybackActivity implements CustomKeyDownVod.
     @Override
     public void onSpeedUp() {
         if (!player().isPlaying()) return;
-        android.util.Log.d("KeySpeed", "long-press speed up -> " + PlayerSetting.getSpeed());
         mBinding.widget.speed.setVisibility(View.VISIBLE);
         mBinding.widget.speed.startAnimation(ResUtil.getAnim(R.anim.forward));
         mBinding.control.action.speed.setText(player().setSpeed(PlayerSetting.getSpeed()));
@@ -1695,7 +1694,6 @@ public class VideoActivity extends PlaybackActivity implements CustomKeyDownVod.
 
     @Override
     public void onSpeedEnd() {
-        android.util.Log.d("KeySpeed", "speed end -> restore " + mHistory.getSpeed());
         mBinding.widget.speed.clearAnimation();
         mBinding.widget.speed.setVisibility(View.GONE);
         mBinding.control.action.speed.setText(player().setSpeed(mHistory.getSpeed()));

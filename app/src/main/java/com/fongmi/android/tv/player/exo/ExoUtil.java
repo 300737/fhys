@@ -17,6 +17,7 @@ import androidx.media3.exoplayer.DefaultRenderersFactory;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.exoplayer.LoadControl;
 import androidx.media3.exoplayer.RenderersFactory;
+import androidx.media3.exoplayer.SeekParameters;
 import androidx.media3.exoplayer.source.MediaSource;
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector;
 import androidx.media3.exoplayer.trackselection.TrackSelector;
@@ -54,7 +55,7 @@ public class ExoUtil {
     }
 
     public static ExoPlayer buildPlayer(int decode, Player.Listener listener) {
-        ExoPlayer player = new ExoPlayer.Builder(App.get()).setLoadControl(buildLoadControl()).setTrackSelector(buildTrackSelector()).setRenderersFactory(buildRenderersFactory(getRenderMode(decode))).setMediaSourceFactory(buildMediaSourceFactory()).build();
+        ExoPlayer player = new ExoPlayer.Builder(App.get()).setLoadControl(buildLoadControl()).setTrackSelector(buildTrackSelector()).setRenderersFactory(buildRenderersFactory(getRenderMode(decode))).setMediaSourceFactory(buildMediaSourceFactory()).setSeekParameters(buildSeekParameters()).build();
         if (BuildConfig.DEBUG) player.addAnalyticsListener(new EventLogger());
         player.setAudioAttributes(PlayerSetting.isPassthrough() ? new AudioAttributes.Builder().setContentType(C.AUDIO_CONTENT_TYPE_MOVIE).setUsage(C.USAGE_MEDIA).build() : AudioAttributes.DEFAULT, true);
         player.setHandleAudioBecomingNoisy(true);
@@ -97,8 +98,12 @@ public class ExoUtil {
         return PlayerSetting.isCaption() ? CaptionStyleCompat.createFromCaptionStyle(((CaptioningManager) App.get().getSystemService(Context.CAPTIONING_SERVICE)).getUserStyle()) : new CaptionStyleCompat(Color.WHITE, Color.TRANSPARENT, Color.TRANSPARENT, CaptionStyleCompat.EDGE_TYPE_OUTLINE, Color.BLACK, null);
     }
 
-    private static LoadControl buildLoadControl() {
-        return new DefaultLoadControl.Builder().setBufferDurationsMs(DefaultLoadControl.DEFAULT_MIN_BUFFER_MS * PlayerSetting.getBuffer(), DefaultLoadControl.DEFAULT_MAX_BUFFER_MS * PlayerSetting.getBuffer(), 500, 1500).build();
+    /** 快进快退秒切换：允许 seek 落在目标点附近的关键帧（前1s/后2s容差），不再从关键帧逐帧解码到精确位置，拖动/连按立即出画 */
+    private static SeekParameters buildSeekParameters() {
+        return new SeekParameters(1_000_000L, 2_000_000L);
+    }
+
+    private static LoadControl buildLoadControl() {        return new DefaultLoadControl.Builder().setBufferDurationsMs(DefaultLoadControl.DEFAULT_MIN_BUFFER_MS * PlayerSetting.getBuffer(), DefaultLoadControl.DEFAULT_MAX_BUFFER_MS * PlayerSetting.getBuffer(), 500, 1500).build();
     }
 
     private static TrackSelector buildTrackSelector() {
