@@ -29,19 +29,39 @@ String className = "com.github.catvod.spider." + api.split("csp_")[1];
 | 文件 | 说明 |
 |---|---|
 | `spider.jar` | 编译产物（156 个 class） |
+| `demo.json` | 示例配置：3 个站点，可直接加载 |
 | `spider-src/` | 全部源码 + `build.sh` |
 | `README.md` | 本文件 |
 
-包里不含任何配置文件——配置是你自己的，我这边一个字都不带。
+## jar 和 json 的关系
+
+TVBox 只认配置 json，不认 jar。json 里的 `spider` 字段告诉它 jar 在哪，
+`sites` 数组告诉它要加载哪些站点、每个站点用哪个类。所以 **jar 必须配一份 json 才有用**。
+
+`spider` 路径在宿主代码里只有两种能生效（`JarLoader.parseJar`）：
+
+- `http` / `https` 开头 → 下载到缓存
+- `file` 开头 → 按本地文件读
+
+`./spider.jar` 这种相对路径**不会被加载**，别写。
 
 ## 怎么用
 
-1. 把 `spider.jar` 放到配置文件同目录（例如 `lib/` 或 json 同级）；
-2. 打开你自己的配置 json，把 `"spider"` 那一行改掉：
-   ```json
-   "spider": "./spider.jar"
-   ```
-3. TVBox 里重新加载配置，完事。
+1. 把 `spider.jar` 和 `demo.json` 一起放到盒子的 `/sdcard/TVBox/` 目录；
+2. `demo.json` 里的 `spider` 写死成 `file:///sdcard/TVBox/spider.jar`；
+3. TVBox → 设置 → 配置 → 地址填 `/sdcard/TVBox/demo.json`（或 `file:///sdcard/TVBox/demo.json`）；
+4. 确定，等它加载完。
+
+`demo.json` 只有 3 个站点，是给你验证 jar 能跑起来用的：
+
+| key | 名称 | 类 |
+|---|---|---|
+| `douban` | 豆瓣精选 | `csp_Douban` |
+| `dytt` | 电影天堂 | `csp_AppYsV2` |
+| `panshare` | 网盘分享 | `csp_PanWebShare` |
+
+想加站，照格式往 `sites` 里加一条就行，`api` 填配置里的 `csp_*`，`key` 随便起但别重复。
+如果你的配置是 http 托管的，把 `spider` 换成 `"http://你的地址/spider.jar"`。
 
 ## 引擎
 
