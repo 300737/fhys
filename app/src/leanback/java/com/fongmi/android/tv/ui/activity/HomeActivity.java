@@ -320,15 +320,23 @@ private void addDoubanRow() {
     private void checkBoxFeature() {
         if (mBoxChecked) return;
         mBoxChecked = true;
-        checkBoxNotice();
-        checkBoxVersion();
         loadBoxRecommend();
+        // 公告和更新都用 DialogFragment，同时弹会互相顶掉，串起来：公告关掉再弹更新
+        checkBoxNotice(this::checkBoxVersion);
     }
 
-    /** 首页弹窗公告：box_home_notice，同一条只弹一次。 */
-    private void checkBoxNotice() {
+    /**
+     * 首页弹窗公告：box_home_notice。
+     * 记录按「公告 id + 日期」，即每条公告每天弹一次 —— 以前是永久只弹一次，
+     * 弹过之后用户再也看不见，容易被当成「弹窗没做」。
+     */
+    private void checkBoxNotice(Runnable next) {
         BoxApi.table("box_home_notice", rows -> {
-            if (rows == null) return;
+            if (rows == null) {
+                Log.d("BoxApi", "box_home_notice 拉取失败，跳过弹窗");
+                App.post(next);
+                return;
+            }
             JSONObject best = null;
             for (int i = 0; i < rows.length(); i++) {
                 JSONObject row = rows.optJSONObject(i);
@@ -336,16 +344,30 @@ private void addDoubanRow() {
                 if (TextUtils.isEmpty(row.optString("content").trim())) continue;
                 if (best == null || row.optInt("weigh") > best.optInt("weigh")) best = row;
             }
-            if (best == null) return;
-            String key = "box_home_notice_" + best.optString("id");
-            if (Prefers.getBoolean(key)) return;
+            if (best == null) {
+                Log.d("BoxApi", "没有可弹的公告（过滤后为空）");
+                App.post(next);
+                return;
+            }
+            String key = "box_home_notice_" + best.optString("id") + "_" + new java.text.SimpleDateFormat("yyyyMMdd", java.util.Locale.US).format(new java.util.Date());
+            if (Prefers.getBoolean(key)) {
+                Log.d("BoxApi", "公告今天已弹过，跳过: " + key);
+                App.post(next);
+                return;
+            }
             String title = best.optString("title");
             String content = best.optString("content").trim();
             String image = BoxApi.image(best.optString("image"));
+            Log.d("BoxApi", "弹公告: " + title + " / img=" + image);
             App.post(() -> {
-                if (isFinishing()) return;
-                BoxNoticeDialog.create().title(title).content(content).image(image).show(this);
-                Prefers.put(key, true);
+                if (isFinishing()) {
+                    next.run();
+                    return;
+                }
+                BoxNoticeDialog.create().title(title).content(content).image(image).onClose(() -> {
+                    Prefers.put(key, true);
+                    next.run();
+                }).show(this);
             });
         });
     }

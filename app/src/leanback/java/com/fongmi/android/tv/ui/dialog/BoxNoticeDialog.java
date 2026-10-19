@@ -1,8 +1,10 @@
 package com.fongmi.android.tv.ui.dialog;
 
+import android.content.DialogInterface;
 import android.text.TextUtils;
 import android.view.View;
 
+import androidx.annotation.NonNull;
 import androidx.fragment.app.FragmentActivity;
 import androidx.viewbinding.ViewBinding;
 
@@ -20,6 +22,7 @@ public class BoxNoticeDialog extends BaseAlertDialog {
     private String title;
     private String content;
     private String image;
+    private Runnable onClose;
 
     public static BoxNoticeDialog create() {
         return new BoxNoticeDialog();
@@ -38,6 +41,20 @@ public class BoxNoticeDialog extends BaseAlertDialog {
     public BoxNoticeDialog image(String image) {
         this.image = image;
         return this;
+    }
+
+    /** 关掉之后要接着做的事（比如再弹版本更新），保证两个弹窗不会同时抢焦点。 */
+    public BoxNoticeDialog onClose(Runnable onClose) {
+        this.onClose = onClose;
+        return this;
+    }
+
+    @Override
+    public void onDismiss(@NonNull DialogInterface dialog) {
+        super.onDismiss(dialog);
+        Runnable runnable = onClose;
+        onClose = null;
+        if (runnable != null) runnable.run();
     }
 
     public BoxNoticeDialog show(FragmentActivity activity) {
