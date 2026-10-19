@@ -159,6 +159,9 @@ public class Douban {
         List<Vod> list = new ArrayList<>();
         java.util.Set<String> seen = new java.util.HashSet<>();
         try {
+            // 豆瓣没有「短剧」分类，只有「短片」（微电影）；而且短片得走 j/search_subjects，
+            // new_search_subjects 对它是空的。这里单独处理，取不到就返回空，上层跳过该行。
+            if ("短片".equals(tag)) return fetchShortList(want);
             int year = Calendar.getInstance().get(Calendar.YEAR);
             for (int y = year; y >= year - 1 && list.size() < want; y--) {
                 String url = "https://movie.douban.com/j/new_search_subjects?sort=S&range=7,10&tags="
@@ -196,6 +199,44 @@ public class Douban {
             Log.e(TAG, "fetchCategoryList " + tag + " exception: " + e.getMessage());
         }
         Log.d(TAG, "fetchCategoryList " + tag + " size=" + list.size());
+        return list;
+    }
+
+    /** 豆瓣「短片」榜（短剧兜底数据源）。 */
+    public static List<Vod> fetchShortList(int want) {
+        List<Vod> list = new ArrayList<>();
+        try {
+            String url = "https://movie.douban.com/j/search_subjects?type=movie&tag="
+                    + URLEncoder.encode("短片", StandardCharsets.UTF_8)
+                    + "&sort=recommend&page_limit=20&page_start=0";
+            Request request = new Request.Builder()
+                    .url(url)
+                    .header("User-Agent", HOT_UA)
+                    .header("Referer", "https://movie.douban.com/")
+                    .build();
+            try (Response response = OkHttp.client(8000).newCall(request).execute()) {
+                if (!response.isSuccessful() || response.body() == null) return list;
+                JSONArray subjects = new JSONObject(response.body().string()).optJSONArray("subjects");
+                if (subjects == null) return list;
+                for (int i = 0; i < subjects.length() && list.size() < want; i++) {
+                    JSONObject item = subjects.optJSONObject(i);
+                    if (item == null) continue;
+                    String title = item.optString("title").trim();
+                    String cover = item.optString("cover").trim();
+                    if (TextUtils.isEmpty(title) || TextUtils.isEmpty(cover)) continue;
+                    Vod vod = new Vod();
+                    vod.setId(item.optString("id", ""));
+                    vod.setName(title);
+                    vod.setPic(cover);
+                    String rate = item.optString("rate", "").trim();
+                    vod.setRemarks(TextUtils.isEmpty(rate) ? "豆瓣短片" : "豆瓣 " + rate);
+                    list.add(vod);
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "fetchShortList exception: " + e.getMessage());
+        }
+        Log.d(TAG, "fetchShortList size=" + list.size());
         return list;
     }
 
