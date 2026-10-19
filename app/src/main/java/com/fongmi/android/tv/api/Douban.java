@@ -141,6 +141,18 @@ public class Douban {
      * sort=S 按评分排序、range=7,10 只取 7 分以上，跨最近三年合并去重，
      * 这样既能覆盖当年新剧，也不至于一年只有两三条。
      */
+    /** 分类榜单独用单线程串行拉：4 个分类同时打豆瓣必被限流（实测电影/动漫直接返回空） */
+    private static final java.util.concurrent.ExecutorService CAT_EXECUTOR =
+            Executors.newSingleThreadExecutor(r -> {
+                Thread t = new Thread(r, "douban-cat");
+                t.setDaemon(true);
+                return t;
+            });
+
+    /** 抓到空结果的时间戳：豆瓣短时间连打会整批返回空，60 秒内不再重复打 */
+    private static final java.util.Map<String, Long> EMPTY_AT = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final long EMPTY_COOLDOWN = 60 * 1000L;
+
     public static void getCategoryList(String tag, int want, HotCallback callback) {
         List<Vod> cached = CAT_CACHE.get(tag);
         if (cached != null && !cached.isEmpty()) {
@@ -148,9 +160,24 @@ public class Douban {
             if (callback != null) App.post(() -> callback.onResponse(copy));
             return;
         }
-        EXECUTOR.execute(() -> {
+        Long emptyAt = EMPTY_AT.get(tag);
+        if (emptyAt != null && System.currentTimeMillis() - emptyAt < EMPTY_COOLDOWN) {
+            if (callback != null) App.post(() -> callback.onResponse(new ArrayList<>()));
+            return;
+        }
+        CAT_EXECUTOR.execute(() -> {
             List<Vod> list = fetchCategoryList(tag, want);
-            if (!list.isEmpty()) CAT_CACHE.put(tag, new ArrayList<>(list));
+            if (list.isEmpty()) {
+                // 大概率是被豆瓣限流，等一下换一次再试
+                try { Thread.sleep(700); } catch (InterruptedException ignored) {}
+                list = fetchCategoryList(tag, want);
+            }
+            if (!list.isEmpty()) {
+                CAT_CACHE.put(tag, new ArrayList<>(list));
+                EMPTY_AT.remove(tag);
+            } else {
+                EMPTY_AT.put(tag, System.currentTimeMillis());
+            }
             if (callback != null) App.post(() -> callback.onResponse(list));
         });
     }
