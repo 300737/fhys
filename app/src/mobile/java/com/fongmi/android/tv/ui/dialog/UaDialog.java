@@ -35,9 +35,16 @@ public class UaDialog extends BaseAlertDialog {
 
     @Override
     protected void initView() {
+        // 打开必须是空的：以前这里会把上次保存的 UA 原样填回来，
+        // 只要误存过一段乱七八糟的文字（比如把聊天内容粘进来），以后每次打开都带着。
         String text = Setting.getUa();
-        binding.text.setText(text);
-        binding.text.setSelection(TextUtils.isEmpty(text) ? 0 : text.length());
+        // UA 里不可能有中文，也不该超过 300 字；命中就当脏数据清掉
+        if (!TextUtils.isEmpty(text) && (text.length() > 300 || text.matches(".*[\\u4e00-\\u9fa5].*"))) {
+            Setting.putUa("");
+            text = "";
+        }
+        binding.text.setText("");
+        binding.text.setHint(TextUtils.isEmpty(text) ? "UA" : text);
     }
 
     @Override
