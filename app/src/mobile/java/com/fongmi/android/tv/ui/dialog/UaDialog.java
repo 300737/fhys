@@ -35,9 +35,15 @@ public class UaDialog extends BaseAlertDialog {
 
     @Override
     protected void initView() {
+        // 打开一律空白。原来这里会把 Setting.getUa() 存的值填回输入框，
+        // 只要误存过一段文字，换源码、清缓存、重装都消不掉。
         String text = Setting.getUa();
-        binding.text.setText(text);
-        binding.text.setSelection(TextUtils.isEmpty(text) ? 0 : text.length());
+        if (!TextUtils.isEmpty(text) && (text.length() > 300 || text.matches(".*[\\u4e00-\\u9fa5].*"))) {
+            Setting.putUa("");
+            text = "";
+        }
+        binding.text.setText("");
+        binding.text.setHint(TextUtils.isEmpty(text) ? "UA" : text);
     }
 
     @Override
