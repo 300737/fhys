@@ -53,3 +53,9 @@ media/docsamples/
 
 # 自建 spider jar 是交付物，必须放行
 !wmz-spider/spider.jar
+
+# 本机临时产物：截图 / 日志 / bundle
+*.png
+splash_log.txt
+push_*.log
+ui_*.xml

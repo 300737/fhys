@@ -278,11 +278,21 @@ public class DanmakuSetting {
     }
 
     /**
-     * 内置兜底的弹幕接口（弹弹play 协议基址）。
+     * 内置兜底的弹幕接口。
+     *
+     * 地址必须是服务端「给 TVBox 用的那一个」：
+     *   https://api.612526.xyz/api/v2/fongmi/danmaku
+     * 它按 name/episode 返回候选索引 [{name,url}]，第一条就是当前这一集，
+     * 播放器再按 url 去取弹幕 XML。
+     *
+     * ⚠️ 别再用 /api/v2/comment?url= 这个兼容接口：它是给「按播放地址查」的老壳
+     * 准备的旁路，源站不稳定，一半请求直接 502，壳拿到 "error code: 502" 当 XML
+     * 解析就报 "not e"，表现为所有壳都没弹幕。
+     *
      * 以前这里只认「手填 > 在线配置」，两者都空就直接没弹幕，用户还得用遥控器
      * 敲一长串 URL —— 现在内置一份，装好就有，想换就在设置页手填覆盖。
      */
-    public static final String BUILTIN_API = "https://api.612526.xyz";
+    public static final String BUILTIN_API = "https://api.612526.xyz/api/v2/fongmi/danmaku?name={name}&episode={episode}";
 
     public static String getEffectiveApiUrl() {
         String userUrl = getApiUrl();
