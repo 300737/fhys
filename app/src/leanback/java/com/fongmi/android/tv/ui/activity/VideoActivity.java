@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.os.SystemClock;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
@@ -114,6 +115,7 @@ public class VideoActivity extends PlaybackActivity implements CustomKeyDownVod.
     private boolean mEndingSkipFired;      // 一次性闭锁：本集只允许触发一次
     private long mLastSkipAtMs;            // 防抖时间戳
     private static final long SKIP_DEBOUNCE_MS = 1500L;
+    private static final String TAG_SKIP = "SkipED";   // 片尾跳集诊断日志
     private Observer<Result> mObserveDetail;
     private Observer<Result> mObservePlayer;
     private Observer<Result> mObserveSearch;
@@ -679,6 +681,7 @@ public class VideoActivity extends PlaybackActivity implements CustomKeyDownVod.
         // 换集：清掉上一集的片尾闭锁与防抖基准，保证新集从头判定
         mEndingSkipFired = true;
         mLastSkipAtMs = SystemClock.elapsedRealtime();
+        Log.d(TAG_SKIP, "onItemClick: LOCK fired=true ep=" + item.getName());
         mFlagAdapter.toggle(item);
         notifyItemChanged(mBinding.episode, mEpisodeAdapter);
         mBinding.episode.setSelectedPosition(mEpisodeAdapter.getPosition());
@@ -853,6 +856,7 @@ public class VideoActivity extends PlaybackActivity implements CustomKeyDownVod.
 
     private void onNext(boolean notify) {
         Episode item = mEpisodeAdapter.getNext();
+        Log.d(TAG_SKIP, "onNext: cur=" + (getEpisode() == null ? "" : getEpisode().getName()) + " next=" + (item == null ? "null" : item.getName()) + " nextSelected=" + (item != null && item.isSelected()));
         if (!item.isSelected()) onItemClick(item);
         else if (notify) Notify.show(mHistory.isRevPlay() ? R.string.error_play_prev : R.string.error_play_next);
     }
@@ -941,6 +945,7 @@ public class VideoActivity extends PlaybackActivity implements CustomKeyDownVod.
     }
 
     private void setOpening(long opening) {
+        Log.d(TAG_SKIP, "setOpening=" + opening);
         mHistory.setOpening(opening);
         mBinding.control.action.opening.setText(opening <= 0 ? getString(R.string.play_op) : Util.timeMs(mHistory.getOpening()));
     }
@@ -965,6 +970,7 @@ public class VideoActivity extends PlaybackActivity implements CustomKeyDownVod.
     }
 
     private void setEnding(long ending) {
+        Log.d(TAG_SKIP, "setEnding=" + ending + " (pos=" + player().getPosition() + " dur=" + player().getDuration() + ")");
         mHistory.setEnding(ending);
         mBinding.control.action.ending.setText(ending <= 0 ? getString(R.string.play_ed) : Util.timeMs(mHistory.getEnding()));
     }
@@ -1392,6 +1398,7 @@ public class VideoActivity extends PlaybackActivity implements CustomKeyDownVod.
         // 新的一集已经准备好，解锁片尾跳集（每集仅一次）
         mEndingSkipFired = false;
         mLastSkipAtMs = SystemClock.elapsedRealtime();
+        Log.d(TAG_SKIP, "onPrepare: UNLOCK fired=false (ep=" + (getEpisode() == null ? "" : getEpisode().getName()) + ")");
     }
 
     @Override
@@ -1470,9 +1477,12 @@ public class VideoActivity extends PlaybackActivity implements CustomKeyDownVod.
         mHistory.setPosition(position = player().getPosition());
         mHistory.setDuration(duration = player().getDuration());
         if (mHistory.canSave() && mHistory.canSync()) syncHistory(false);
-        if (shouldSkipEnding(position, duration)) {
+        boolean skip = shouldSkipEnding(position, duration);
+        Log.d(TAG_SKIP, "tick pos=" + position + " dur=" + duration + " op=" + mHistory.getOpening() + " ed=" + mHistory.getEnding() + " fired=" + mEndingSkipFired + " debounce=" + (SystemClock.elapsedRealtime() - mLastSkipAtMs) + " skip=" + skip);
+        if (skip) {
             mEndingSkipFired = true;
             mLastSkipAtMs = SystemClock.elapsedRealtime();
+            Log.d(TAG_SKIP, ">>> TRIGGER ending-skip, call checkEnded(false)");
             checkEnded(false);
         }
         updateAlwaysProgress();
