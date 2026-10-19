@@ -156,12 +156,12 @@ public class SearchActivity extends BaseActivity implements WordAdapter.OnClickL
         final int total = HOT_CATS.length;
         final java.util.List<java.util.List<com.fongmi.android.tv.bean.Vod>> results =
                 new java.util.ArrayList<>(java.util.Collections.nCopies(total, (java.util.List<com.fongmi.android.tv.bean.Vod>) null));
-        final int[] done = {0};
         for (int i = 0; i < total; i++) {
             final int index = i;
             com.fongmi.android.tv.api.Douban.getCategoryList(HOT_CATS[i][1], 10, list -> {
                 results.set(index, list);
-                if (++done[0] == total) App.post(() -> applyCategoryHot(results));
+                // 哪一类先回来就先显示哪一类，不再死等 4 类全齐（之前要等十几秒）
+                App.post(() -> applyCategoryHot(results));
             });
         }
     }
@@ -169,6 +169,8 @@ public class SearchActivity extends BaseActivity implements WordAdapter.OnClickL
     /** 五类都到齐再一次性铺开，保证「电视剧/电影/综艺/动漫/短剧」顺序固定。 */
     private void applyCategoryHot(java.util.List<java.util.List<com.fongmi.android.tv.bean.Vod>> results) {
         if (isFinishing()) return;
+        // 用户已经在输入了，别拿热搜盖掉联想词
+        if (!empty()) return;
         try {
             org.json.JSONArray data = new org.json.JSONArray();
             boolean any = false;
