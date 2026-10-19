@@ -68,7 +68,9 @@ public final class DanmakuSearchDialog extends BaseBottomSheetDialog implements 
         binding.recycler.setItemAnimator(null);
         binding.recycler.setHasFixedSize(false);
         binding.recycler.addItemDecoration(new SpaceItemDecoration(1, 16));
-        setKeyword(player.getMetadata().title);
+        // 打开必须是空的：以前这里会把当前视频的标题（metadata.title）自动填进去，
+        // 标题解析异常时就会把一整段莫名其妙的文字带进输入框
+        setKeyword("");
         Util.showKeyboard(binding.keyword);
     }
 
