@@ -172,13 +172,15 @@ public class Douban {
                 try { Thread.sleep(700); } catch (InterruptedException ignored) {}
                 list = fetchCategoryList(tag, want);
             }
-            if (!list.isEmpty()) {
-                CAT_CACHE.put(tag, new ArrayList<>(list));
+            // lambda 里不能引用被重新赋值的局部变量（not effectively final），先落成常量
+            final List<Vod> result = list;
+            if (!result.isEmpty()) {
+                CAT_CACHE.put(tag, new ArrayList<>(result));
                 EMPTY_AT.remove(tag);
             } else {
                 EMPTY_AT.put(tag, System.currentTimeMillis());
             }
-            if (callback != null) App.post(() -> callback.onResponse(list));
+            if (callback != null) App.post(() -> callback.onResponse(result));
         });
     }
 
