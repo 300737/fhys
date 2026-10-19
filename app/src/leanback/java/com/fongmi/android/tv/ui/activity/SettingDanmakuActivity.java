@@ -61,15 +61,15 @@ public class SettingDanmakuActivity extends BaseActivity implements DanmakuListe
     }
 
     private void updateApiVisibility() {
-        boolean load = DanmakuSetting.isLoad();
-        mBinding.danmakuApi.setVisibility(load ? View.VISIBLE : View.GONE);
+        // 接口地址项始终可见：之前它跟着 isLoad 一起 GONE，开关没开时用户压根
+        // 找不到填地址的地方，也就永远开不了弹幕。
+        mBinding.danmakuApi.setVisibility(View.VISIBLE);
         updateAutoVisibility();
     }
 
     private void updateAutoVisibility() {
-        // 只要开启弹幕加载就允许打开「自动加载」，避免接口地址未填时开关被隐藏、用户无法开启
-        boolean show = DanmakuSetting.isLoad();
-        mBinding.danmakuAuto.setVisibility(show ? View.VISIBLE : View.GONE);
+        // 「自动匹配」同样常驻显示，避免入口被隐藏后无从开启
+        mBinding.danmakuAuto.setVisibility(View.VISIBLE);
         updateSpiderVisibility();
     }
 

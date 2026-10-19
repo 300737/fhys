@@ -9,16 +9,22 @@ import com.github.catvod.utils.Prefers;
 
 public class DanmakuSetting {
 
+    /**
+     * 是否加载弹幕。默认开：之前这里默认 false，而设置页又把「自动匹配/接口地址」
+     * 两项在它关闭时整体 GONE，用户根本看不到入口，表现为所有壳子都取不到弹幕。
+     * 用户手动关过的话 Prefers 里存着 false，不会被这个默认值覆盖。
+     */
     public static boolean isLoad() {
-        return Prefers.getBoolean("danmaku_load");
+        return Prefers.getBoolean("danmaku_load", true);
     }
 
     public static void putLoad(boolean danmakuLoad) {
         Prefers.put("danmaku_load", danmakuLoad);
     }
 
+    /** 是否按片名/集数自动匹配弹幕。默认开，理由同 isLoad()。 */
     public static boolean isAuto() {
-        return Prefers.getBoolean("danmaku_auto");
+        return Prefers.getBoolean("danmaku_auto", true);
     }
 
     public static void putAuto(boolean auto) {

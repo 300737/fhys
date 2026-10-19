@@ -1,6 +1,7 @@
 package com.fongmi.android.tv.api;
 
 import android.text.TextUtils;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.collection.ArrayMap;
@@ -74,9 +75,26 @@ public class DanmakuApi {
             @Override
             public void onResponse(@NonNull Call call, @NonNull Response response) {
                 try {
-                    Danmaku.arrayFrom(response.body().string()).stream().findFirst().ifPresent(item -> App.post(() -> found.accept(item)));
-                } catch (Exception ignored) {
+                    String body = response.body() == null ? "" : response.body().string();
+                    if (!response.isSuccessful()) {
+                        Log.d(TAG, "danmaku search failed: HTTP " + response.code() + " name=" + name + " episode=" + episode);
+                        return;
+                    }
+                    java.util.List<Danmaku> list = Danmaku.arrayFrom(body);
+                    if (list.isEmpty()) {
+                        Log.d(TAG, "danmaku empty: name=" + name + " episode=" + episode + " bodyLen=" + body.length());
+                        return;
+                    }
+                    list.stream().findFirst().ifPresent(item -> App.post(() -> found.accept(item)));
+                } catch (Exception e) {
+                    // 以前这里是 catch(Exception ignored)，请求失败毫无痕迹，根本没法排查
+                    Log.d(TAG, "danmaku search error: name=" + name + " episode=" + episode + " " + e);
                 }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull java.io.IOException e) {
+                Log.d(TAG, "danmaku request error: name=" + name + " episode=" + episode + " " + e.getMessage());
             }
         });
     }
