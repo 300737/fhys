@@ -244,6 +244,10 @@
     <string name="all">All</string>
     <string name="yes">Yes</string>
     <string name="none">None</string>
+    <string name="danmaku_api_unset">Unset (tap to fill)</string>
+    <string name="danmaku_api_manual">Set - manual</string>
+    <string name="danmaku_api_online">Set - from online config</string>
+    <string name="danmaku_api_invalid">Invalid URL</string>
     <string name="times">times</string>
     <string name="lines">lines</string>
 

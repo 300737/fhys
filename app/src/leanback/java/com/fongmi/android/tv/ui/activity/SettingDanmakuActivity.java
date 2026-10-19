@@ -27,8 +27,21 @@ public class SettingDanmakuActivity extends BaseActivity implements DanmakuListe
         return getString(value ? R.string.setting_on : R.string.setting_off);
     }
 
+    /**
+     * 把弹幕接口状态说清楚，而不是只回一个「有/无」。
+     * 之前只有「有/无」，地址是空的还是地址根本不合法完全看不出来，
+     * 用户没法判断「弹幕取不到」到底是没填地址、地址写错，还是接口真的挂了。
+     */
     private String getApiStatus() {
-        return getString(TextUtils.isEmpty(DanmakuSetting.getEffectiveApiUrl()) ? R.string.none : R.string.yes);
+        String manual = DanmakuSetting.getApiUrl();
+        if (!TextUtils.isEmpty(manual)) {
+            return getString(DanmakuSetting.isValidApiUrl(manual) ? R.string.danmaku_api_manual : R.string.danmaku_api_invalid);
+        }
+        String online = DanmakuSetting.getEffectiveApiUrl();
+        if (!TextUtils.isEmpty(online)) {
+            return getString(DanmakuSetting.isValidApiUrl(online) ? R.string.danmaku_api_online : R.string.danmaku_api_invalid);
+        }
+        return getString(R.string.danmaku_api_unset);
     }
 
     @Override

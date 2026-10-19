@@ -242,6 +242,10 @@
     <string name="all">全部</string>
     <string name="yes">有</string>
     <string name="none">无</string>
+    <string name="danmaku_api_unset">未配置（点此填写）</string>
+    <string name="danmaku_api_manual">已配置 · 手动填写</string>
+    <string name="danmaku_api_online">已配置 · 来自在线配置</string>
+    <string name="danmaku_api_invalid">地址无效（需 http/https 开头）</string>
     <string name="times">倍</string>
     <string name="lines">行</string>
 
