@@ -31,8 +31,9 @@ public class Douban {
      * 30 秒超时，后续站点全部排队等待 —— 表现为「只有第一个站点能出图，后面都加载不出」。
      * 改为共享单线程池，超时也收紧到 3 秒，避免长时间占位。
      */
+    // 3 线程：首页要同时拉 5 个分类高分榜，单线程会把总耗时拖到 20 秒开外
     private static final java.util.concurrent.ExecutorService EXECUTOR =
-            Executors.newSingleThreadExecutor(r -> {
+            Executors.newFixedThreadPool(3, r -> {
                 Thread t = new Thread(r, "douban-fetch");
                 t.setDaemon(true);
                 return t;
@@ -129,6 +130,72 @@ public class Douban {
         } catch (Exception e) {
             Log.e(TAG, "fetchHotList exception: " + e.getMessage(), e);
         }
+        return list;
+    }
+
+    /** 分类高分榜缓存：key = 豆瓣标签（电视剧/电影/综艺/动漫） */
+    private static final java.util.Map<String, List<Vod>> CAT_CACHE = new java.util.concurrent.ConcurrentHashMap<>();
+
+    /**
+     * 按豆瓣分类拉「评分最高」的一批片。
+     * sort=S 按评分排序、range=7,10 只取 7 分以上，跨最近三年合并去重，
+     * 这样既能覆盖当年新剧，也不至于一年只有两三条。
+     */
+    public static void getCategoryList(String tag, int want, HotCallback callback) {
+        List<Vod> cached = CAT_CACHE.get(tag);
+        if (cached != null && !cached.isEmpty()) {
+            List<Vod> copy = new ArrayList<>(cached);
+            if (callback != null) App.post(() -> callback.onResponse(copy));
+            return;
+        }
+        EXECUTOR.execute(() -> {
+            List<Vod> list = fetchCategoryList(tag, want);
+            if (!list.isEmpty()) CAT_CACHE.put(tag, new ArrayList<>(list));
+            if (callback != null) App.post(() -> callback.onResponse(list));
+        });
+    }
+
+    public static List<Vod> fetchCategoryList(String tag, int want) {
+        List<Vod> list = new ArrayList<>();
+        java.util.Set<String> seen = new java.util.HashSet<>();
+        try {
+            int year = Calendar.getInstance().get(Calendar.YEAR);
+            for (int y = year; y >= year - 1 && list.size() < want; y--) {
+                String url = "https://movie.douban.com/j/new_search_subjects?sort=S&range=7,10&tags="
+                        + URLEncoder.encode(tag, StandardCharsets.UTF_8)
+                        + "&playable=1&start=0&year_range=" + y + "," + y;
+                Request request = new Request.Builder()
+                        .url(url)
+                        .header("User-Agent", HOT_UA)
+                        .header("Referer", "https://www.douban.com/")
+                        .build();
+                try (Response response = OkHttp.client(8000).newCall(request).execute()) {
+                    if (!response.isSuccessful() || response.body() == null) continue;
+                    JSONArray data = new JSONObject(response.body().string()).optJSONArray("data");
+                    if (data == null) continue;
+                    for (int i = 0; i < data.length() && list.size() < want; i++) {
+                        JSONObject item = data.optJSONObject(i);
+                        if (item == null) continue;
+                        String title = item.optString("title").trim();
+                        String cover = item.optString("cover").trim();
+                        if (TextUtils.isEmpty(title) || TextUtils.isEmpty(cover)) continue;
+                        if (!seen.add(title)) continue;
+                        Vod vod = new Vod();
+                        vod.setId(item.optString("id", ""));
+                        vod.setName(title);
+                        vod.setPic(cover);
+                        String rate = item.optString("rate", "").trim();
+                        vod.setRemarks(TextUtils.isEmpty(rate) ? "豆瓣高分" : "豆瓣 " + rate);
+                        list.add(vod);
+                    }
+                }
+                // 豆瓣对密集请求敏感，年份之间稍作停顿
+                Thread.sleep(300);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "fetchCategoryList " + tag + " exception: " + e.getMessage());
+        }
+        Log.d(TAG, "fetchCategoryList " + tag + " size=" + list.size());
         return list;
     }
 

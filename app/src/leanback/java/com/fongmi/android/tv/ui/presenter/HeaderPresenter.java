@@ -20,7 +20,10 @@ public class HeaderPresenter extends Presenter {
     @Override
     public void onBindViewHolder(@NonNull Presenter.ViewHolder viewHolder, Object object) {
         HeaderPresenter.ViewHolder holder = (HeaderPresenter.ViewHolder) viewHolder;
-        CharSequence text = object instanceof String ? object.toString() : ResUtil.getString((int) object);
+        CharSequence text;
+        if (object instanceof com.fongmi.android.tv.bean.RowTitle) text = ((com.fongmi.android.tv.bean.RowTitle) object).getText();
+        else if (object instanceof String) text = object.toString();
+        else text = ResUtil.getString((int) object);
         holder.binding.text.setText(text);
         // 标题文本为空时隐藏整行，不留空白（如已清空的「更新推荐」）
         boolean empty = text == null || text.length() == 0;
