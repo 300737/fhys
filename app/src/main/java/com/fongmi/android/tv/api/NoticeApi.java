@@ -150,9 +150,13 @@ public class NoticeApi {
             }
             Collections.sort(list, (a, b) -> b.optInt("weigh") - a.optInt("weigh"));
             StringBuilder sb = new StringBuilder();
+            List<String> seen = new ArrayList<>();
             for (JSONObject object : list) {
                 String content = object.optString("content").trim();
                 if (content.isEmpty()) continue;
+                // 后台常有多条内容一模一样的公告（不同权重各留一份），重复滚动很吵，这里去重
+                if (seen.contains(content)) continue;
+                seen.add(content);
                 if (sb.length() > 0) sb.append("　　");
                 sb.append(content);
             }
