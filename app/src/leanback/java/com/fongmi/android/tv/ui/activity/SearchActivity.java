@@ -200,6 +200,7 @@ public class SearchActivity extends BaseActivity implements WordAdapter.OnClickL
             }
             org.json.JSONObject root = new org.json.JSONObject();
             root.put("data", data);
+            android.util.Log.d("HotED", "apply 分类=" + HOT_CATS.length + " 词条=" + data.length() + " 各类=" + describeResults(results));
             // 直接铺词条：setAdapter(save=false) 在关键词为空时会直接 return（那是给联想词用的），
             // 而且这里也不该写进热搜缓存（缓存带 ▎ 分隔符，下次读出来很怪）
             mWordAdapter.setItems(Word.objectFrom(root.toString()).getData());
