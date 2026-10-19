@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
@@ -106,6 +107,13 @@ public class VideoActivity extends PlaybackActivity implements CustomKeyDownVod.
     private ViewGroup.LayoutParams mFrameParams;
     private boolean mInit = true;
     private boolean mPlaybackStarted;
+
+    // 片尾自动跳集的三重保护。onTimeChanged 由时钟每秒回调，而切集链路
+    // （onRefresh -> getPlayer -> 网络解析 -> onPrepare）是异步的，缺了这些保护
+    // 就会出现"一秒跳一集"的连环跳：同一次片尾被反复判定，新集刚起播又被判为播完。
+    private boolean mEndingSkipFired;      // 一次性闭锁：本集只允许触发一次
+    private long mLastSkipAtMs;            // 防抖时间戳
+    private static final long SKIP_DEBOUNCE_MS = 1500L;
     private Observer<Result> mObserveDetail;
     private Observer<Result> mObservePlayer;
     private Observer<Result> mObserveSearch;
@@ -668,6 +676,9 @@ public class VideoActivity extends PlaybackActivity implements CustomKeyDownVod.
     @Override
     public void onItemClick(Episode item) {
         if (shouldEnterFullscreen(item)) return;
+        // 换集：清掉上一集的片尾闭锁与防抖基准，保证新集从头判定
+        mEndingSkipFired = true;
+        mLastSkipAtMs = SystemClock.elapsedRealtime();
         mFlagAdapter.toggle(item);
         notifyItemChanged(mBinding.episode, mEpisodeAdapter);
         mBinding.episode.setSelectedPosition(mEpisodeAdapter.getPosition());
@@ -892,13 +903,16 @@ public class VideoActivity extends PlaybackActivity implements CustomKeyDownVod.
 
     private void onRefresh() {
         mPlaybackStarted = true;
-        saveHistory();
         player().stop();
         player().clear();
         mClock.setCallback(null);
         if (mFlagAdapter.getItemCount() == 0) return;
         if (mEpisodeAdapter.getItemCount() == 0) return;
         getPlayer(getFlag(), getEpisode());
+        // 必须在 getPlayer 之后落库：updateHistory 在那里才把集名/地址/进度改成新集的。
+        // 之前先 saveHistory 会把"上一集的集名 + 新集的进度"写进历史，
+        // 下次进来 seamless() 按集名找，就会强行跳回上一集（点第1集却播第4集）。
+        saveHistory();
     }
 
     private boolean onResetToggle() {
@@ -1375,6 +1389,9 @@ public class VideoActivity extends PlaybackActivity implements CustomKeyDownVod.
     protected void onPrepare() {
         setDecode();
         setPosition();
+        // 新的一集已经准备好，解锁片尾跳集（每集仅一次）
+        mEndingSkipFired = false;
+        mLastSkipAtMs = SystemClock.elapsedRealtime();
     }
 
     @Override
@@ -1453,10 +1470,27 @@ public class VideoActivity extends PlaybackActivity implements CustomKeyDownVod.
         mHistory.setPosition(position = player().getPosition());
         mHistory.setDuration(duration = player().getDuration());
         if (mHistory.canSave() && mHistory.canSync()) syncHistory(false);
-        if (mHistory.getEnding() > 0 && duration > 0 && mHistory.getEnding() + position >= duration) {
+        if (shouldSkipEnding(position, duration)) {
+            mEndingSkipFired = true;
+            mLastSkipAtMs = SystemClock.elapsedRealtime();
             checkEnded(false);
         }
         updateAlwaysProgress();
+    }
+
+    /**
+     * 片尾跳集的判定：条件之外还要过三道闸，缺一就会出现连环跳。
+     * 1. mEndingSkipFired —— 一次性闭锁，本集跳过就不再触发，等新集 onPrepare 才解锁
+     * 2. 防抖窗口         —— 两次自动跳集至少间隔 SKIP_DEBOUNCE_MS
+     * 3. position > opening —— 必须真的播过了才可能到片尾，防止新集刚起播（进度被
+     *    seek 到片尾区）时立刻被误判成播完
+     */
+    private boolean shouldSkipEnding(long position, long duration) {
+        if (mEndingSkipFired) return false;
+        if (mHistory.getEnding() <= 0 || duration <= 0) return false;
+        if (mHistory.getEnding() + position < duration) return false;
+        if (position <= Math.max(0, mHistory.getOpening())) return false;
+        return SystemClock.elapsedRealtime() - mLastSkipAtMs >= SKIP_DEBOUNCE_MS;
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -1470,7 +1504,15 @@ public class VideoActivity extends PlaybackActivity implements CustomKeyDownVod.
     }
 
     private void setPosition() {
-        if (mHistory != null) player().seekTo(Math.max(mHistory.getOpening(), mHistory.getPosition()));
+        if (mHistory == null) return;
+        long opening = Math.max(0, mHistory.getOpening());
+        long target = Math.max(opening, mHistory.getPosition());
+        long duration = player().getDuration();
+        long ending = mHistory.getEnding();
+        // 起播位置落在片尾区间（多半是上一集残留的进度），退回片头之后。
+        // 否则新一集刚起播就满足片尾条件，会被立刻判为播完并再次跳集。
+        if (duration > 0 && ending > 0 && target + ending >= duration) target = opening;
+        player().seekTo(target);
     }
 
     private void checkEnded(boolean notify) {
