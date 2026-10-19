@@ -80,6 +80,22 @@ public class DanmakuApi {
                         Log.d(TAG, "danmaku search failed: HTTP " + response.code() + " name=" + name + " episode=" + episode);
                         return;
                     }
+                    // 兼容「接口直接返回弹幕本体」的弹幕服务。
+                    // 标准协议要求返回 [{name,url}] 的弹幕源索引，但不少自建服务直接吐
+                    // bilibili 风格 XML。以前这种响应会掉进 gson 解析抛 JsonSyntaxException
+                    // 再被吞掉，表现为"一点弹幕都没有"，分不清是没数据还是协议不认。
+                    if (isDanmakuXmlBody(body)) {
+                        if (!body.contains("<d")) {
+                            Log.d(TAG, "danmaku xml has no entries: name=" + name + " episode=" + episode + " url=" + call.request().url());
+                            return;
+                        }
+                        Danmaku item = new Danmaku();
+                        item.setName(name);
+                        item.setUrl(call.request().url().toString());
+                        Log.d(TAG, "danmaku xml source: name=" + name + " episode=" + episode + " len=" + body.length());
+                        App.post(() -> found.accept(item));
+                        return;
+                    }
                     java.util.List<Danmaku> list = Danmaku.arrayFrom(body);
                     if (list.isEmpty()) {
                         Log.d(TAG, "danmaku empty: name=" + name + " episode=" + episode + " bodyLen=" + body.length());
@@ -97,6 +113,18 @@ public class DanmakuApi {
                 Log.d(TAG, "danmaku request error: name=" + name + " episode=" + episode + " " + e.getMessage());
             }
         });
+    }
+
+    /**
+     * 判断响应是不是弹幕本体 XML（bilibili 风格 {@code <i><d p="...">text</d></i>}），
+     * 而不是本协议要求的弹幕源索引 JSON 数组。
+     */
+    private static boolean isDanmakuXmlBody(String body) {
+        if (TextUtils.isEmpty(body)) return false;
+        String head = body.length() > 128 ? body.substring(0, 128) : body;
+        head = head.trim().toLowerCase();
+        if (!head.startsWith("<?xml") && !head.startsWith("<i")) return false;
+        return head.contains("<i") || body.contains("<d");
     }
 
     public static void cancel() {
