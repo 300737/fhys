@@ -113,8 +113,10 @@ public class VideoActivity extends PlaybackActivity implements CustomKeyDownVod.
     // （onRefresh -> getPlayer -> 网络解析 -> onPrepare）是异步的，缺了这些保护
     // 就会出现"一秒跳一集"的连环跳：同一次片尾被反复判定，新集刚起播又被判为播完。
     private boolean mEndingSkipFired;      // 一次性闭锁：本集只允许触发一次
+    private boolean mEndingSkipArmed;      // 保险栓：必须先在「片尾区之前」见过一次进度才允许跳
     private long mLastSkipAtMs;            // 防抖时间戳
-    private static final long SKIP_DEBOUNCE_MS = 1500L;
+    private static final long SKIP_DEBOUNCE_MS = 3000L;
+    private static final long SKIP_ARM_MARGIN_MS = 3000L;  // 退出片尾区要留出这么多余量才算真的播过了
     private static final String TAG_SKIP = "SkipED";   // 片尾跳集诊断日志
     private Observer<Result> mObserveDetail;
     private Observer<Result> mObservePlayer;
@@ -678,10 +680,11 @@ public class VideoActivity extends PlaybackActivity implements CustomKeyDownVod.
     @Override
     public void onItemClick(Episode item) {
         if (shouldEnterFullscreen(item)) return;
-        // 换集：清掉上一集的片尾闭锁与防抖基准，保证新集从头判定
+        // 换集：清掉上一集的片尾闭锁与防抖基准，并撤掉保险栓，保证新集从头判定
         mEndingSkipFired = true;
+        mEndingSkipArmed = false;
         mLastSkipAtMs = SystemClock.elapsedRealtime();
-        Log.d(TAG_SKIP, "onItemClick: LOCK fired=true ep=" + item.getName());
+        Log.d(TAG_SKIP, "onItemClick: LOCK fired=true armed=false ep=" + item.getName());
         mFlagAdapter.toggle(item);
         notifyItemChanged(mBinding.episode, mEpisodeAdapter);
         mBinding.episode.setSelectedPosition(mEpisodeAdapter.getPosition());
@@ -953,7 +956,12 @@ public class VideoActivity extends PlaybackActivity implements CustomKeyDownVod.
     private void onEnding() {
         long position = player().getPosition();
         long duration = player().getDuration();
-        if (player().canSetEnding(position, duration)) setEnding(duration - position);
+        if (!player().canSetEnding(position, duration)) return;
+        setEnding(duration - position);
+        // 用户亲手打的片尾点，本集立刻获得跳集资格（打个点的当下就应当跳下一集）
+        mEndingSkipFired = false;
+        mEndingSkipArmed = true;
+        Log.d(TAG_SKIP, "ARMED by user marking ending (pos=" + position + " dur=" + duration + ")");
     }
 
     private void onEndingAdd() {
@@ -1395,10 +1403,13 @@ public class VideoActivity extends PlaybackActivity implements CustomKeyDownVod.
     protected void onPrepare() {
         setDecode();
         setPosition();
-        // 新的一集已经准备好，解锁片尾跳集（每集仅一次）
+        // 新的一集已经准备好，解锁片尾跳集（每集仅一次）。
+        // 保险栓先撤掉：此刻播放器常常只拿到一个假的时长（实测起播瞬间会报 205000），
+        // 而 setPosition 又把进度 seek 到了片头结尾处，若不撤栓就会被当场判成「播完」。
         mEndingSkipFired = false;
+        mEndingSkipArmed = false;
         mLastSkipAtMs = SystemClock.elapsedRealtime();
-        Log.d(TAG_SKIP, "onPrepare: UNLOCK fired=false (ep=" + (getEpisode() == null ? "" : getEpisode().getName()) + ")");
+        Log.d(TAG_SKIP, "onPrepare: UNLOCK fired=false armed=false (ep=" + (getEpisode() == null ? "" : getEpisode().getName()) + ")");
     }
 
     @Override
@@ -1477,10 +1488,12 @@ public class VideoActivity extends PlaybackActivity implements CustomKeyDownVod.
         mHistory.setPosition(position = player().getPosition());
         mHistory.setDuration(duration = player().getDuration());
         if (mHistory.canSave() && mHistory.canSync()) syncHistory(false);
+        updateEndingSkipArmed(position, duration);
         boolean skip = shouldSkipEnding(position, duration);
-        Log.d(TAG_SKIP, "tick pos=" + position + " dur=" + duration + " op=" + mHistory.getOpening() + " ed=" + mHistory.getEnding() + " fired=" + mEndingSkipFired + " debounce=" + (SystemClock.elapsedRealtime() - mLastSkipAtMs) + " skip=" + skip);
+        Log.d(TAG_SKIP, "tick pos=" + position + " dur=" + duration + " op=" + mHistory.getOpening() + " ed=" + mHistory.getEnding() + " fired=" + mEndingSkipFired + " armed=" + mEndingSkipArmed + " debounce=" + (SystemClock.elapsedRealtime() - mLastSkipAtMs) + " skip=" + skip);
         if (skip) {
             mEndingSkipFired = true;
+            mEndingSkipArmed = false;
             mLastSkipAtMs = SystemClock.elapsedRealtime();
             Log.d(TAG_SKIP, ">>> TRIGGER ending-skip, call checkEnded(false)");
             checkEnded(false);
@@ -1489,16 +1502,39 @@ public class VideoActivity extends PlaybackActivity implements CustomKeyDownVod.
     }
 
     /**
-     * 片尾跳集的判定：条件之外还要过三道闸，缺一就会出现连环跳。
+     * 保险栓：只有亲眼见过「进度还在片尾区之前」，才允许这一集触发跳集。
+     * 切集瞬间播放器会先报一个假时长（实测起播瞬间 dur=205000，几秒后才变真实值），
+     * 而 setPosition 又会把进度 seek 到片头结尾处（约 100s），
+     * 于是「片尾 + 进度 >= 时长」在起播第一秒就成立 —— 这才是连环跳的真正源头。
+     * 有了保险栓，新集必须先老老实实播一段、进度落到片尾区之前，才具备跳集资格。
+     */
+    private void updateEndingSkipArmed(long position, long duration) {
+        if (mEndingSkipArmed) return;
+        long ending = mHistory.getEnding();
+        if (ending <= 0 || duration <= 0) return;
+        if (duration <= position) return;                                       // 假时长：比当前进度还短
+        if (duration <= Math.max(0, mHistory.getOpening()) + ending) return;    // 片头+片尾比整集还长，时长不可信
+        if (position + ending + SKIP_ARM_MARGIN_MS >= duration) return;         // 还在片尾区里，不算数
+        mEndingSkipArmed = true;
+        Log.d(TAG_SKIP, "ARMED (pos=" + position + " dur=" + duration + " ed=" + ending + ")");
+    }
+
+    /**
+     * 片尾跳集的判定：条件之外还要过四道闸，缺一就会出现连环跳。
      * 1. mEndingSkipFired —— 一次性闭锁，本集跳过就不再触发，等新集 onPrepare 才解锁
-     * 2. 防抖窗口         —— 两次自动跳集至少间隔 SKIP_DEBOUNCE_MS
-     * 3. position > opening —— 必须真的播过了才可能到片尾，防止新集刚起播（进度被
+     * 2. mEndingSkipArmed —— 保险栓，本集必须先在片尾区之前播过，杜绝起播即跳
+     * 3. 防抖窗口         —— 两次自动跳集至少间隔 SKIP_DEBOUNCE_MS
+     * 4. position > opening —— 必须真的播过了才可能到片尾，防止新集刚起播（进度被
      *    seek 到片尾区）时立刻被误判成播完
      */
     private boolean shouldSkipEnding(long position, long duration) {
         if (mEndingSkipFired) return false;
-        if (mHistory.getEnding() <= 0 || duration <= 0) return false;
-        if (mHistory.getEnding() + position < duration) return false;
+        if (!mEndingSkipArmed) return false;
+        long ending = mHistory.getEnding();
+        if (ending <= 0 || duration <= 0) return false;
+        if (duration <= position) return false;                                 // 假时长
+        if (duration <= Math.max(0, mHistory.getOpening()) + ending) return false;  // 片头+片尾比整集还长
+        if (ending + position < duration) return false;
         if (position <= Math.max(0, mHistory.getOpening())) return false;
         return SystemClock.elapsedRealtime() - mLastSkipAtMs >= SKIP_DEBOUNCE_MS;
     }

@@ -10,7 +10,9 @@ import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.provider.Settings;
+import android.util.Log;
 import android.text.TextUtils;
 import android.text.style.ClickableSpan;
 import android.view.MotionEvent;
@@ -110,6 +112,15 @@ import java.util.List;
 import java.util.Objects;
 
 public class VideoActivity extends PlaybackActivity implements Clock.Callback, CustomKeyDown.Listener, TrackDialog.Listener, ControlDialog.Listener, FlagAdapter.OnClickListener, EpisodeAdapter.OnClickListener, QualityAdapter.OnClickListener, QuickAdapter.OnClickListener, ParseAdapter.OnClickListener, CastDialog.Listener, InfoDialog.Listener {
+
+    // 片尾自动跳集的保护：一次性闭锁 + 保险栓 + 防抖。切集瞬间播放器会先报一个
+    // 假时长（实测 205000），进度又被 seek 到片头结尾，不设保险栓就会连环跳集。
+    private boolean mEndingSkipFired;      // 一次性闭锁：本集只允许触发一次
+    private boolean mEndingSkipArmed;      // 保险栓：必须先在片尾区之前播过才允许跳
+    private long mLastSkipAtMs;            // 防抖时间戳
+    private static final long SKIP_DEBOUNCE_MS = 3000L;
+    private static final long SKIP_ARM_MARGIN_MS = 3000L;
+    private static final String TAG_SKIP = "SkipED";
 
     private ActivityVideoBinding mBinding;
     private ViewGroup.LayoutParams mFrameParams;
@@ -657,6 +668,10 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
     @Override
     public void onItemClick(Episode item) {
         if (shouldEnterFullscreen(item)) return;
+        mEndingSkipFired = true;
+        mEndingSkipArmed = false;
+        mLastSkipAtMs = SystemClock.elapsedRealtime();
+        Log.d(TAG_SKIP, "onItemClick: LOCK fired=true armed=false ep=" + item.getName());
         mFlagAdapter.toggle(item);
         notifyItemChanged(mBinding.episode, mEpisodeAdapter);
         scrollToPosition(mBinding.episode, mEpisodeAdapter.getPosition());
@@ -1073,7 +1088,12 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
     private void onEnding() {
         long position = player().getPosition();
         long duration = player().getDuration();
-        if (player().canSetEnding(position, duration)) setEnding(duration - position);
+        if (player().canSetEnding(position, duration)) {
+            setEnding(duration - position);
+            mEndingSkipFired = false;
+            mEndingSkipArmed = true;
+            Log.d(TAG_SKIP, "ARMED by user marking ending (pos=" + position + " dur=" + duration + ")");
+        }
         setR1Callback();
     }
 
@@ -1470,6 +1490,10 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
     protected void onPrepare() {
         setDecode();
         setPosition();
+        mEndingSkipFired = false;
+        mEndingSkipArmed = false;
+        mLastSkipAtMs = SystemClock.elapsedRealtime();
+        Log.d(TAG_SKIP, "onPrepare: UNLOCK fired=false armed=false (ep=" + (getEpisode() == null ? "" : getEpisode().getName()) + ")");
     }
 
     @Override
@@ -1554,10 +1578,45 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
         mHistory.setPosition(position = player().getPosition());
         mHistory.setDuration(duration = player().getDuration());
         if (mHistory.canSave() && mHistory.canSync()) syncHistory(false);
-        if (mHistory.getEnding() > 0 && duration > 0 && mHistory.getEnding() + position >= duration) {
+        updateEndingSkipArmed(position, duration);
+        boolean skip = shouldSkipEnding(position, duration);
+        Log.d(TAG_SKIP, "tick pos=" + position + " dur=" + duration + " op=" + mHistory.getOpening() + " ed=" + mHistory.getEnding() + " fired=" + mEndingSkipFired + " armed=" + mEndingSkipArmed + " debounce=" + (SystemClock.elapsedRealtime() - mLastSkipAtMs) + " skip=" + skip);
+        if (skip) {
+            mEndingSkipFired = true;
+            mEndingSkipArmed = false;
+            mLastSkipAtMs = SystemClock.elapsedRealtime();
+            Log.d(TAG_SKIP, ">>> TRIGGER ending-skip, call checkEnded(false)");
             checkEnded(false);
         }
         updateAlwaysProgress();
+    }
+
+    /**
+     * 保险栓：只有亲眼见过「进度还在片尾区之前」，才允许这一集触发跳集。
+     * 切集瞬间播放器会先报一个假时长，进度又被 seek 到片头结尾处，
+     * 于是「片尾 + 进度 >= 时长」在起播第一秒就成立 —— 这就是连环跳的真正源头。
+     */
+    private void updateEndingSkipArmed(long position, long duration) {
+        if (mEndingSkipArmed) return;
+        long ending = mHistory.getEnding();
+        if (ending <= 0 || duration <= 0) return;
+        if (duration <= position) return;
+        if (duration <= Math.max(0, mHistory.getOpening()) + ending) return;
+        if (position + ending + SKIP_ARM_MARGIN_MS >= duration) return;
+        mEndingSkipArmed = true;
+        Log.d(TAG_SKIP, "ARMED (pos=" + position + " dur=" + duration + " ed=" + ending + ")");
+    }
+
+    private boolean shouldSkipEnding(long position, long duration) {
+        if (mEndingSkipFired) return false;
+        if (!mEndingSkipArmed) return false;
+        long ending = mHistory.getEnding();
+        if (ending <= 0 || duration <= 0) return false;
+        if (duration <= position) return false;
+        if (duration <= Math.max(0, mHistory.getOpening()) + ending) return false;
+        if (ending + position < duration) return false;
+        if (position <= Math.max(0, mHistory.getOpening())) return false;
+        return SystemClock.elapsedRealtime() - mLastSkipAtMs >= SKIP_DEBOUNCE_MS;
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
