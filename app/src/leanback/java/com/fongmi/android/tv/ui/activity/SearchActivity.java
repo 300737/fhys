@@ -105,7 +105,19 @@ public class SearchActivity extends BaseActivity implements WordAdapter.OnClickL
     private void setRecyclerView() {
         mBinding.wordRecycler.setItemAnimator(null);
         mBinding.wordRecycler.setHasFixedSize(false);
-        mBinding.wordRecycler.setLayoutManager(new FlexboxLayoutManager(this, FlexDirection.ROW));
+        // 热搜用固定 4 列网格：分类标题占满一整行，词条一格一个，左右留白天然对称
+        androidx.recyclerview.widget.GridLayoutManager manager =
+                new androidx.recyclerview.widget.GridLayoutManager(this, 4);
+        manager.setSpanSizeLookup(new androidx.recyclerview.widget.GridLayoutManager.SpanSizeLookup() {
+            @Override
+            public int getSpanSize(int position) {
+                if (mWordAdapter == null || position < 0 || position >= mWordAdapter.getItemCount()) return 1;
+                Word.Data data = mWordAdapter.getItem(position);
+                String title = data == null ? "" : data.getTitle();
+                return title.startsWith(WordAdapter.DIVIDER) ? 4 : 1;
+            }
+        });
+        mBinding.wordRecycler.setLayoutManager(manager);
         mBinding.wordRecycler.setAdapter(mWordAdapter = new WordAdapter(this));
         mBinding.recordRecycler.setHasFixedSize(false);
         mBinding.recordRecycler.setLayoutManager(new FlexboxLayoutManager(this, FlexDirection.ROW));

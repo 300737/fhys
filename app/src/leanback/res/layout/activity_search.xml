@@ -54,6 +54,50 @@
 
         </androidx.appcompat.widget.LinearLayoutCompat>
 
+        <androidx.appcompat.widget.LinearLayoutCompat
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/keyBack"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_marginEnd="18dp"
+                android:background="@drawable/selector_toolbar_menu_item"
+                android:clickable="true"
+                android:focusable="true"
+                android:padding="10dp"
+                android:src="@drawable/ic_keyboard_back"
+                app:tint="@color/white" />
+
+            <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/keySearch"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_marginEnd="18dp"
+                android:background="@drawable/selector_toolbar_menu_item"
+                android:clickable="true"
+                android:focusable="true"
+                android:padding="10dp"
+                android:src="@drawable/ic_keyboard_search"
+                app:tint="@color/white" />
+
+            <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/keyHome"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:background="@drawable/selector_toolbar_menu_item"
+                android:clickable="true"
+                android:focusable="true"
+                android:padding="10dp"
+                android:src="@drawable/ic_setting_home"
+                app:tint="@color/white" />
+
+        </androidx.appcompat.widget.LinearLayoutCompat>
+
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/keyboard"
             android:layout_width="wrap_content"
@@ -63,7 +107,7 @@
             android:layout_marginTop="16dp"
             android:overScrollMode="never"
             app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
-            app:spanCount="7"
+            app:spanCount="6"
             tools:itemCount="36"
             tools:listitem="@layout/adapter_keyboard_text" />
 

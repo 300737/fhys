@@ -62,7 +62,6 @@ import com.fongmi.android.tv.server.Server;
 import com.fongmi.android.tv.service.DLNARendererService;
 import com.fongmi.android.tv.service.PlaybackService;
 import com.fongmi.android.tv.impl.UpdateListener;
-import com.fongmi.android.tv.ui.dialog.BoxNoticeDialog;
 import com.fongmi.android.tv.ui.dialog.UpdateDialog;
 import com.fongmi.android.tv.ui.adapter.BaseDiffCallback;
 import com.fongmi.android.tv.ui.base.BaseActivity;
@@ -190,9 +189,7 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
     private final List<Vod> mDoubanItems = new ArrayList<>();
     private String mDoubanSiteKey = "";
     private ListRow mDoubanRow;
-    private ListRow mBoxRow;
     private boolean mBoxChecked;
-    private final List<Vod> mBoxItems = new ArrayList<>();
 
     /**
      * 读取内置的爱奇艺推荐数据（assets/iqiyi/recommends.json）。
@@ -320,56 +317,8 @@ private void addDoubanRow() {
     private void checkBoxFeature() {
         if (mBoxChecked) return;
         mBoxChecked = true;
-        loadBoxRecommend();
-        // 公告和更新都用 DialogFragment，同时弹会互相顶掉，串起来：公告关掉再弹更新
-        checkBoxNotice(this::checkBoxVersion);
-    }
-
-    /**
-     * 首页弹窗公告：box_home_notice。
-     * 记录按「公告 id + 日期」，即每条公告每天弹一次 —— 以前是永久只弹一次，
-     * 弹过之后用户再也看不见，容易被当成「弹窗没做」。
-     */
-    private void checkBoxNotice(Runnable next) {
-        BoxApi.table("box_home_notice", rows -> {
-            if (rows == null) {
-                Log.d("BoxApi", "box_home_notice 拉取失败，跳过弹窗");
-                App.post(next);
-                return;
-            }
-            JSONObject best = null;
-            for (int i = 0; i < rows.length(); i++) {
-                JSONObject row = rows.optJSONObject(i);
-                if (row == null || !BoxApi.enabled(row) || !BoxApi.matchApp(row)) continue;
-                if (TextUtils.isEmpty(row.optString("content").trim())) continue;
-                if (best == null || row.optInt("weigh") > best.optInt("weigh")) best = row;
-            }
-            if (best == null) {
-                Log.d("BoxApi", "没有可弹的公告（过滤后为空）");
-                App.post(next);
-                return;
-            }
-            String key = "box_home_notice_" + best.optString("id") + "_" + new java.text.SimpleDateFormat("yyyyMMdd", java.util.Locale.US).format(new java.util.Date());
-            if (Prefers.getBoolean(key)) {
-                Log.d("BoxApi", "公告今天已弹过，跳过: " + key);
-                App.post(next);
-                return;
-            }
-            String title = best.optString("title");
-            String content = best.optString("content").trim();
-            String image = BoxApi.image(best.optString("image"));
-            Log.d("BoxApi", "弹公告: " + title + " / img=" + image);
-            App.post(() -> {
-                if (isFinishing()) {
-                    next.run();
-                    return;
-                }
-                BoxNoticeDialog.create().title(title).content(content).image(image).onClose(() -> {
-                    Prefers.put(key, true);
-                    next.run();
-                }).show(this);
-            });
-        });
+        // 首页弹窗公告、首页精选推荐按需求下线，只保留跑马灯与版本检查
+        checkBoxVersion();
     }
 
     /** 版本更新：version 表里电视端的记录，比当前版本新才提示；忽略过的版本不再打扰。 */
@@ -415,57 +364,6 @@ private void addDoubanRow() {
         } catch (Throwable e) {
             Toast.makeText(this, url, Toast.LENGTH_LONG).show();
         }
-    }
-
-    /** 首页推荐位：box_home 表，转成卡片插到站点首页内容之前，点卡片按片名搜索。 */
-    private void loadBoxRecommend() {
-        BoxApi.table("box_home", rows -> {
-            if (rows == null) return;
-            List<Vod> list = new ArrayList<>();
-            for (int i = 0; i < rows.length(); i++) {
-                JSONObject row = rows.optJSONObject(i);
-                if (row == null || !BoxApi.enabled(row) || !BoxApi.matchApp(row)) continue;
-                String title = row.optString("title").trim();
-                String pic = BoxApi.image(row.optString("coverimage"));
-                if (title.isEmpty() || pic.isEmpty()) continue;
-                Vod vod = new Vod();
-                vod.setId(row.optString("id"));
-                vod.setName(title);
-                vod.setPic(pic);
-                vod.setRemarks(row.optString("subtitle"));
-                vod.setContent(row.optString("blurbcontent"));
-                Site site = new Site();
-                // 后台推的是"片子"不是"站点里的 id"，复用豆瓣/爱奇艺那条分支：点击按片名搜索
-                site.setKey("douban");
-                site.setName("精选");
-                vod.setSite(site);
-                list.add(vod);
-            }
-            if (list.isEmpty()) {
-                Log.d("BoxApi", "box_home 过滤后为空，不插入精选行");
-                return;
-            }
-            Log.d("BoxApi", "box_home 可用 " + list.size() + " 条，等首页内容加载完再插入");
-            App.post(() -> {
-                mBoxItems.clear();
-                mBoxItems.addAll(list);
-                addBoxRow();
-            });
-        });
-    }
-
-    private void addBoxRow() {
-        if (isFinishing() || mBoxItems.isEmpty()) return;
-        if (mBoxRow != null) {
-            int old = mAdapter.indexOf(mBoxRow);
-            if (old != -1) mAdapter.removeItems(old, 1);
-        }
-        ArrayObjectAdapter adapter = new ArrayObjectAdapter(new VodPresenter(this, Style.rect()).scale(0.8f));
-        adapter.addAll(0, new ArrayList<>(mBoxItems));
-        mBoxRow = new ListRow(adapter);
-        int index = Math.min(Math.max(getRecommendIndex(), 0), mAdapter.size());
-        mAdapter.add(index, mBoxRow);
-        android.util.Log.d("BoxApi", "精选行已插入 index=" + index + " 共 " + mBoxItems.size() + " 条, adapter size=" + mAdapter.size());
     }
 
     /** 1.0.577 这种逐段比较，缺位按 0 算。 */
@@ -805,8 +703,6 @@ private void addDoubanRow() {
         Style style = result.getStyle(getHome().getStyle());
         if (style.isList()) mAdapter.addAll(mAdapter.size(), gridList);
         else addGrid(gridList, style);
-        // 站点首页内容就绪后再插「精选」行，避免被后面的 addAll 顶到看不见的位置
-        addBoxRow();
     }
 
     private void addGrid(List<Vod> items, Style style) {

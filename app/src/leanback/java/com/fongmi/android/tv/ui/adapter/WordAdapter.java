@@ -10,7 +10,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.fongmi.android.tv.bean.Word;
 import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.databinding.AdapterSearchWordBinding;
-import com.google.android.flexbox.FlexboxLayoutManager;
 
 public class WordAdapter extends BaseDiffAdapter<Word.Data, WordAdapter.ViewHolder> {
 
@@ -47,8 +46,6 @@ public class WordAdapter extends BaseDiffAdapter<Word.Data, WordAdapter.ViewHold
             holder.binding.text.setFocusable(false);
             holder.binding.text.setFocusableInTouchMode(false);
             holder.binding.text.setOnClickListener(null);
-            holder.binding.text.setLayoutParams(new FlexboxLayoutManager.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         } else {
             // 普通词条：样式要还原，否则复用会带着标题的样式
             holder.binding.text.setText(text);
@@ -56,8 +53,6 @@ public class WordAdapter extends BaseDiffAdapter<Word.Data, WordAdapter.ViewHold
             holder.binding.text.setBackgroundResource(R.drawable.selector_item_round);
             holder.binding.text.setFocusable(true);
             holder.binding.text.setFocusableInTouchMode(true);
-            holder.binding.text.setLayoutParams(new FlexboxLayoutManager.LayoutParams(
-                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
             holder.binding.text.setOnClickListener(v -> listener.onItemClick(text));
         }
     }

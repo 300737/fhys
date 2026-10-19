@@ -22,8 +22,13 @@ public class CustomKeyboard implements KeyboardAdapter.OnClickListener {
     private void initView() {
         binding.keyboard.setItemAnimator(null);
         binding.keyboard.setHasFixedSize(false);
-        binding.keyboard.addItemDecoration(new SpaceItemDecoration(7, 8));
+        // 键盘 6 列（A-Z + 0-9 = 36 个，正好 6x6），间距 6dp
+        binding.keyboard.addItemDecoration(new SpaceItemDecoration(6, 8));
         binding.keyboard.setAdapter(adapter = new KeyboardAdapter(this));
+        // 顶栏只留三个：返回（删一个字）/ 搜索 / 主页，居中排列
+        binding.keyBack.setOnClickListener(v -> onBackspace(new StringBuilder(binding.keyword.getText().toString()), binding.keyword.getSelectionStart()));
+        binding.keySearch.setOnClickListener(v -> callback.onSearch());
+        binding.keyHome.setOnClickListener(v -> callback.showDialog());
     }
 
     @Override
