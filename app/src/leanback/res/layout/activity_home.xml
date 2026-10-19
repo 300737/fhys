@@ -20,13 +20,10 @@
         android:paddingEnd="26dp"
         android:paddingBottom="12dp">
 
-        <com.fongmi.android.tv.ui.custom.view.RotatingImageView
+        <com.fongmi.android.tv.ui.custom.view.WindmillView
             android:id="@+id/windmill"
             android:layout_width="27dp"
             android:layout_height="27dp"
-            android:contentDescription="@null"
-            android:scaleType="fitCenter"
-            android:src="@drawable/ic_fengche"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
