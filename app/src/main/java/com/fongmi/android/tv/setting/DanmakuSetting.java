@@ -295,11 +295,23 @@ public class DanmakuSetting {
     public static final String BUILTIN_API = "https://api.612526.xyz/api/v2/fongmi/danmaku?name={name}&episode={episode}";
 
     public static String getEffectiveApiUrl() {
-        String userUrl = getApiUrl();
+        String userUrl = migrateApiUrl(getApiUrl());
         if (!TextUtils.isEmpty(userUrl)) return userUrl;
-        String online = VodConfig.get().getConfig().getDanmaku();
+        String online = migrateApiUrl(VodConfig.get().getConfig().getDanmaku());
         if (!TextUtils.isEmpty(online)) return online;
         return BUILTIN_API;
+    }
+
+    /**
+     * 老版本给用户填过（后台也下发过）的地址是
+     * {@code https://api.612526.xyz/api/v2/comment?url=...} —— 这是服务端「按播放地址查」
+     * 的兼容旁路，源站一半请求直接 502，返回体是纯文本 {@code error code: 502}，
+     * 壳拿它当 XML 解析就报 "not e"，表现为弹幕时有时无。
+     * 见到这条旧地址就自动换成官方入口，用户不必手动进设置改，升级即修好。
+     */
+    private static String migrateApiUrl(String url) {
+        if (TextUtils.isEmpty(url)) return url;
+        return url.contains("/api/v2/comment?url=") ? BUILTIN_API : url;
     }
 
     /** 当前生效的接口地址是不是内置的那一套（设置页用来区分来源）。 */
