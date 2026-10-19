@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.ConnectivityManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.provider.Settings;
@@ -32,6 +33,8 @@ import com.fongmi.android.tv.Product;
 import com.fongmi.android.tv.player.PlayerManager;
 import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.Updater;
+import com.fongmi.android.tv.BuildConfig;
+import com.fongmi.android.tv.api.BoxApi;
 import com.fongmi.android.tv.api.NoticeApi;
 import com.fongmi.android.tv.api.config.LiveConfig;
 import com.fongmi.android.tv.api.config.VodConfig;
@@ -57,6 +60,9 @@ import com.fongmi.android.tv.player.Source;
 import com.fongmi.android.tv.server.Server;
 import com.fongmi.android.tv.service.DLNARendererService;
 import com.fongmi.android.tv.service.PlaybackService;
+import com.fongmi.android.tv.impl.UpdateListener;
+import com.fongmi.android.tv.ui.dialog.BoxNoticeDialog;
+import com.fongmi.android.tv.ui.dialog.UpdateDialog;
 import com.fongmi.android.tv.ui.adapter.BaseDiffCallback;
 import com.fongmi.android.tv.ui.base.BaseActivity;
 import com.fongmi.android.tv.ui.custom.CustomRowPresenter;
@@ -78,8 +84,10 @@ import com.fongmi.android.tv.utils.ResUtil;
 import com.fongmi.android.tv.utils.UrlUtil;
 import com.fongmi.android.tv.utils.Util;
 import com.github.catvod.net.OkHttp;
+import com.github.catvod.utils.Prefers;
 import com.google.common.collect.Lists;
 
+import org.json.JSONObject;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
@@ -181,6 +189,8 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
     private final List<Vod> mDoubanItems = new ArrayList<>();
     private String mDoubanSiteKey = "";
     private ListRow mDoubanRow;
+    private ListRow mBoxRow;
+    private boolean mBoxChecked;
 
     /**
      * 读取内置的爱奇艺推荐数据（assets/iqiyi/recommends.json）。
@@ -302,7 +312,151 @@ private void addDoubanRow() {
     mAdapter.add(Math.min(getRecommendIndex(), mAdapter.size()), mDoubanRow);
 }
 
-private void removeDoubanRow() {
+// ===================== 繁华影视后台联动 =====================
+    // 弹窗公告 / 版本更新 / 首页推荐位，全部来自后台表，代码里不写死具体内容。
+
+    private void checkBoxFeature() {
+        if (mBoxChecked) return;
+        mBoxChecked = true;
+        checkBoxNotice();
+        checkBoxVersion();
+        loadBoxRecommend();
+    }
+
+    /** 首页弹窗公告：box_home_notice，同一条只弹一次。 */
+    private void checkBoxNotice() {
+        BoxApi.table("box_home_notice", rows -> {
+            if (rows == null) return;
+            JSONObject best = null;
+            for (int i = 0; i < rows.length(); i++) {
+                JSONObject row = rows.optJSONObject(i);
+                if (row == null || !BoxApi.enabled(row) || !BoxApi.matchApp(row)) continue;
+                if (TextUtils.isEmpty(row.optString("content").trim())) continue;
+                if (best == null || row.optInt("weigh") > best.optInt("weigh")) best = row;
+            }
+            if (best == null) return;
+            String key = "box_home_notice_" + best.optString("id");
+            if (Prefers.getBoolean(key)) return;
+            String title = best.optString("title");
+            String content = best.optString("content").trim();
+            String image = BoxApi.image(best.optString("image"));
+            App.post(() -> {
+                if (isFinishing()) return;
+                BoxNoticeDialog.create().title(title).content(content).image(image).show(this);
+                Prefers.put(key, true);
+            });
+        });
+    }
+
+    /** 版本更新：version 表里电视端的记录，比当前版本新才提示；忽略过的版本不再打扰。 */
+    private void checkBoxVersion() {
+        BoxApi.table("version", rows -> {
+            if (rows == null) return;
+            JSONObject best = null;
+            for (int i = 0; i < rows.length(); i++) {
+                JSONObject row = rows.optJSONObject(i);
+                if (row == null || !BoxApi.enabled(row) || !BoxApi.matchApp(row)) continue;
+                if (TextUtils.isEmpty(row.optString("newversion"))) continue;
+                if (best == null || compareVersion(row.optString("newversion"), best.optString("newversion")) > 0) best = row;
+            }
+            if (best == null) return;
+            String version = best.optString("newversion");
+            if (compareVersion(version, BuildConfig.VERSION_LABEL) <= 0) return;
+            if (version.equals(Prefers.getString("box_skip_version"))) return;
+            String desc = best.optString("content").trim();
+            String url = BoxApi.image(best.optString("downloadurl"));
+            App.post(() -> {
+                if (isFinishing()) return;
+                UpdateDialog.create().title(getString(R.string.update_version) + " " + version).desc(desc).listener(new UpdateListener() {
+                    @Override
+                    public void onCancel(View view) {
+                        // 用户选择稍后：记住这个版本，别每次启动都弹
+                        Prefers.put("box_skip_version", version);
+                    }
+
+                    @Override
+                    public void onConfirm(View view) {
+                        Prefers.put("box_skip_version", version);
+                        openDownload(url);
+                    }
+                }).show(this);
+            });
+        });
+    }
+
+    private void openDownload(String url) {
+        if (TextUtils.isEmpty(url)) return;
+        try {
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+        } catch (Throwable e) {
+            Toast.makeText(this, url, Toast.LENGTH_LONG).show();
+        }
+    }
+
+    /** 首页推荐位：box_home 表，转成卡片插到站点首页内容之前，点卡片按片名搜索。 */
+    private void loadBoxRecommend() {
+        BoxApi.table("box_home", rows -> {
+            if (rows == null) return;
+            List<Vod> list = new ArrayList<>();
+            for (int i = 0; i < rows.length(); i++) {
+                JSONObject row = rows.optJSONObject(i);
+                if (row == null || !BoxApi.enabled(row) || !BoxApi.matchApp(row)) continue;
+                String title = row.optString("title").trim();
+                String pic = BoxApi.image(row.optString("coverimage"));
+                if (title.isEmpty() || pic.isEmpty()) continue;
+                Vod vod = new Vod();
+                vod.setId(row.optString("id"));
+                vod.setName(title);
+                vod.setPic(pic);
+                vod.setRemarks(row.optString("subtitle"));
+                vod.setContent(row.optString("blurbcontent"));
+                Site site = new Site();
+                // 后台推的是"片子"不是"站点里的 id"，复用豆瓣/爱奇艺那条分支：点击按片名搜索
+                site.setKey("douban");
+                site.setName("精选");
+                vod.setSite(site);
+                list.add(vod);
+            }
+            if (list.isEmpty()) return;
+            App.post(() -> addBoxRow(list));
+        });
+    }
+
+    private void addBoxRow(List<Vod> items) {
+        if (isFinishing() || items.isEmpty()) return;
+        if (mBoxRow != null) {
+            int old = mAdapter.indexOf(mBoxRow);
+            if (old != -1) mAdapter.removeItems(old, 1);
+        }
+        ArrayObjectAdapter adapter = new ArrayObjectAdapter(new VodPresenter(this, Style.rect()).scale(0.8f));
+        adapter.addAll(0, items);
+        mBoxRow = new ListRow(adapter);
+        mAdapter.add(Math.min(getRecommendIndex(), mAdapter.size()), mBoxRow);
+    }
+
+    /** 1.0.577 这种逐段比较，缺位按 0 算。 */
+    private static int compareVersion(String a, String b) {
+        String[] x = a.split("\\.");
+        String[] y = b.split("\\.");
+        int len = Math.max(x.length, y.length);
+        for (int i = 0; i < len; i++) {
+            int xi = i < x.length ? toInt(x[i]) : 0;
+            int yi = i < y.length ? toInt(y[i]) : 0;
+            if (xi != yi) return xi - yi;
+        }
+        return 0;
+    }
+
+    private static int toInt(String s) {
+        try {
+            String num = s.replaceAll("[^0-9]", "");
+            return num.isEmpty() ? 0 : Integer.parseInt(num);
+        } catch (Throwable e) {
+            return 0;
+        }
+    }
+
+    private void removeDoubanRow() {
     if (mDoubanRow == null) return;
     int old = mAdapter.indexOf(mDoubanRow);
     if (old != -1) mAdapter.removeItems(old, 1);
@@ -512,6 +666,7 @@ private void removeDoubanRow() {
         checkAction(getIntent());
         setFocus();
         setNotice();
+        checkBoxFeature();
     }
 
     // 顶栏中间的跑马灯公告。

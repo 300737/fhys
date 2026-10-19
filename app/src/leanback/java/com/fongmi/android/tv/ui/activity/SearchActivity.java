@@ -15,6 +15,7 @@ import androidx.viewbinding.ViewBinding;
 
 import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.R;
+import com.fongmi.android.tv.api.BoxApi;
 import com.fongmi.android.tv.bean.Word;
 import com.fongmi.android.tv.databinding.ActivitySearchBinding;
 import com.fongmi.android.tv.impl.Callback;
@@ -129,7 +130,43 @@ public class SearchActivity extends BaseActivity implements WordAdapter.OnClickL
     private void getHot() {
         mBinding.word.setText(R.string.search_hot);
         mWordAdapter.setItems(Word.objectFrom(Setting.getHot()).getData());
-        OkHttp.newCall("https://api.web.360kan.com/v1/rank?cat=1", Map.of(HttpHeaders.REFERER, "https://www.360kan.com/rank/general")).enqueue(getCallback(true));
+        // 热搜优先用「繁华影视」后台的「搜索内容推荐」表，后台没配才退回 360kan 榜单
+        BoxApi.table("box_hotsearch", rows -> {
+            String json = hotFromTable(rows);
+            if (!TextUtils.isEmpty(json)) {
+                App.post(() -> setAdapter(json, true));
+                return;
+            }
+            OkHttp.newCall("https://api.web.360kan.com/v1/rank?cat=1", Map.of(HttpHeaders.REFERER, "https://www.360kan.com/rank/general")).enqueue(getCallback(true));
+        });
+    }
+
+    /** 把后台的搜索推荐表转成 Word 认的 {"data":[{"title":...}]} 结构。 */
+    private String hotFromTable(org.json.JSONArray rows) {
+        if (rows == null) return "";
+        try {
+            java.util.List<org.json.JSONObject> list = new java.util.ArrayList<>();
+            for (int i = 0; i < rows.length(); i++) {
+                org.json.JSONObject row = rows.optJSONObject(i);
+                if (row == null) continue;
+                if (!BoxApi.enabled(row) || !BoxApi.matchApp(row)) continue;
+                if (TextUtils.isEmpty(row.optString("title"))) continue;
+                list.add(row);
+            }
+            if (list.isEmpty()) return "";
+            list.sort((a, b) -> b.optInt("weigh") - a.optInt("weigh"));
+            org.json.JSONArray data = new org.json.JSONArray();
+            for (org.json.JSONObject row : list) {
+                org.json.JSONObject item = new org.json.JSONObject();
+                item.put("title", row.optString("title"));
+                data.put(item);
+            }
+            org.json.JSONObject root = new org.json.JSONObject();
+            root.put("data", data);
+            return root.toString();
+        } catch (Throwable e) {
+            return "";
+        }
     }
 
     private void getSuggest(String text) {
