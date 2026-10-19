@@ -120,6 +120,7 @@ public class SearchFragment extends BaseFragment implements MenuProvider, WordAd
     }
 
     private void checkKeyword() {
+        // 打开搜索页必须是空的：不管布局、系统恢复、自动填充带进来什么都不留
         boolean visible = requireActivity().getSupportFragmentManager().findFragmentByTag(CollectFragment.class.getSimpleName()) != null;
         if (TextUtils.isEmpty(getKeyword()) && !visible) Util.showKeyboard(mBinding.keyword);
         setKeyword(getKeyword());
