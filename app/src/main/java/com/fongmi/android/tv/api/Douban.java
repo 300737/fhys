@@ -153,15 +153,43 @@ public class Douban {
     private static final java.util.Map<String, Long> EMPTY_AT = new java.util.concurrent.ConcurrentHashMap<>();
     private static final long EMPTY_COOLDOWN = 60 * 1000L;
 
+    /** 每次成功拉到豆瓣数据的时间，用于节流 */
+    private static final java.util.Map<String, Long> CAT_AT = new java.util.concurrent.ConcurrentHashMap<>();
+    /** 普通读取的缓存有效期 */
+    private static final long CACHE_MS = 5 * 60 * 1000L;
+    /** 强制刷新时的最小间隔：60 秒内重复进页面不重复打豆瓣，避免被限流 */
+    private static final long FORCE_MIN_MS = 60 * 1000L;
+
     public static void getCategoryList(String tag, int want, HotCallback callback) {
+        getCategoryList(tag, want, false, callback);
+    }
+
+    /**
+     * @param force true = 每次进入搜索页都实时向豆瓣重新拉最新榜（60 秒内不重复打）
+     *              false = 5 分钟内存缓存
+     *              拉取失败时回退上一次成功的数据，不会让用户看到空白。
+     */
+    public static void getCategoryList(String tag, int want, boolean force, HotCallback callback) {
         List<Vod> cached = CAT_CACHE.get(tag);
-        if (cached != null && !cached.isEmpty()) {
+        Long at = CAT_AT.get(tag);
+        long now = System.currentTimeMillis();
+        boolean hasCache = cached != null && !cached.isEmpty();
+
+        if (force) {
+            // 刚拉过一分钟内就不再打豆瓣（连续进出页面会把它打限流）
+            if (hasCache && at != null && now - at < FORCE_MIN_MS) {
+                List<Vod> copy = new ArrayList<>(cached);
+                if (callback != null) App.post(() -> callback.onResponse(copy));
+                return;
+            }
+        } else if (hasCache && at != null && now - at < CACHE_MS) {
             List<Vod> copy = new ArrayList<>(cached);
             if (callback != null) App.post(() -> callback.onResponse(copy));
             return;
         }
+
         Long emptyAt = EMPTY_AT.get(tag);
-        if (emptyAt != null && System.currentTimeMillis() - emptyAt < EMPTY_COOLDOWN) {
+        if (!hasCache && emptyAt != null && now - emptyAt < EMPTY_COOLDOWN) {
             if (callback != null) App.post(() -> callback.onResponse(new ArrayList<>()));
             return;
         }
@@ -176,11 +204,16 @@ public class Douban {
             final List<Vod> result = list;
             if (!result.isEmpty()) {
                 CAT_CACHE.put(tag, new ArrayList<>(result));
+                CAT_AT.put(tag, System.currentTimeMillis());
                 EMPTY_AT.remove(tag);
+                if (callback != null) App.post(() -> callback.onResponse(result));
             } else {
                 EMPTY_AT.put(tag, System.currentTimeMillis());
+                // 拉空了就回退上次的榜，别让热搜凭空消失
+                List<Vod> fallback = CAT_CACHE.get(tag);
+                final List<Vod> out = fallback == null ? new ArrayList<>() : new ArrayList<>(fallback);
+                if (callback != null) App.post(() -> callback.onResponse(out));
             }
-            if (callback != null) App.post(() -> callback.onResponse(result));
         });
     }
 
