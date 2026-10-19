@@ -321,7 +321,6 @@ private void addDoubanRow() {
         if (mBoxChecked) return;
         mBoxChecked = true;
         loadBoxRecommend();
-        loadCategoryRows();
         // 公告和更新都用 DialogFragment，同时弹会互相顶掉，串起来：公告关掉再弹更新
         checkBoxNotice(this::checkBoxVersion);
     }
@@ -467,50 +466,6 @@ private void addDoubanRow() {
         int index = Math.min(Math.max(getRecommendIndex(), 0), mAdapter.size());
         mAdapter.add(index, mBoxRow);
         android.util.Log.d("BoxApi", "精选行已插入 index=" + index + " 共 " + mBoxItems.size() + " 条, adapter size=" + mAdapter.size());
-    }
-
-    // 首页分类行：电视剧 / 电影 / 综艺 / 动漫 / 短剧，内容全部是豆瓣当前高分。
-    // 标签用豆瓣官方分类名；豆瓣没有「短剧」这个标签，退而用「短片」，取不到就自动跳过该行。
-    private static final String[][] BOX_CATS = {
-            {"电视剧", "电视剧"}, {"电影", "电影"}, {"综艺", "综艺"},
-            {"动漫", "动漫"}, {"短剧", "短片"}};
-
-    private void loadCategoryRows() {
-        final int total = BOX_CATS.length;
-        final List<List<Vod>> results = new ArrayList<>(java.util.Collections.nCopies(total, (List<Vod>) null));
-        final int[] done = {0};
-        for (int i = 0; i < total; i++) {
-            final int index = i;
-            com.fongmi.android.tv.api.Douban.getCategoryList(BOX_CATS[i][1], 12, list -> {
-                results.set(index, list);
-                if (++done[0] == total) insertCategoryRows(results);
-            });
-        }
-    }
-
-    /** 五个分类都拉完再一次性按固定顺序插入，避免谁先回来谁排前面。 */
-    private void insertCategoryRows(List<List<Vod>> results) {
-        if (isFinishing()) return;
-        int index = Math.min(mAdapter.size(), getRecommendIndex() + 2);
-        int inserted = 0;
-        for (int i = 0; i < BOX_CATS.length; i++) {
-            List<Vod> list = results.get(i);
-            if (list == null || list.isEmpty()) {
-                Log.d("BoxApi", "分类无数据跳过: " + BOX_CATS[i][0]);
-                continue;
-            }
-            Site marker = new Site();
-            marker.setKey("douban");
-            marker.setName(BOX_CATS[i][0]);
-            for (Vod vod : list) vod.setSite(marker);
-            ArrayObjectAdapter adapter = new ArrayObjectAdapter(new VodPresenter(this, Style.rect()).scale(0.8f));
-            adapter.addAll(0, list);
-            mAdapter.add(index++, new com.fongmi.android.tv.bean.RowTitle(BOX_CATS[i][0]));
-            mAdapter.add(index++, new ListRow(adapter));
-            inserted++;
-            Log.d("BoxApi", "分类行: " + BOX_CATS[i][0] + " " + list.size() + " 条");
-        }
-        Log.d("BoxApi", "分类高分行共插入 " + inserted + " 行");
     }
 
     /** 1.0.577 这种逐段比较，缺位按 0 算。 */

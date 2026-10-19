@@ -127,18 +127,70 @@ public class SearchActivity extends BaseActivity implements WordAdapter.OnClickL
         else getSuggest(text);
     }
 
+    // 搜索页热搜按分类出，内容全部是豆瓣当前高分
+    private static final String[][] HOT_CATS = {
+            {"电视剧", "电视剧"}, {"电影", "电影"}, {"综艺", "综艺"},
+            {"动漫", "动漫"}, {"短剧", "短片"}};
+    /** 分类分隔符：带这个前缀的条目只当标题用，点了不搜索 */
+    private static final String HOT_DIVIDER = "▎";
+
     private void getHot() {
         mBinding.word.setText(R.string.search_hot);
         mWordAdapter.setItems(Word.objectFrom(Setting.getHot()).getData());
-        // 热搜优先用「繁华影视」后台的「搜索内容推荐」表，后台没配才退回 360kan 榜单
-        BoxApi.table("box_hotsearch", rows -> {
-            String json = hotFromTable(rows);
-            if (!TextUtils.isEmpty(json)) {
-                App.post(() -> setAdapter(json, true));
+        loadCategoryHot();
+    }
+
+    private void loadCategoryHot() {
+        final int total = HOT_CATS.length;
+        final java.util.List<java.util.List<com.fongmi.android.tv.bean.Vod>> results =
+                new java.util.ArrayList<>(java.util.Collections.nCopies(total, (java.util.List<com.fongmi.android.tv.bean.Vod>) null));
+        final int[] done = {0};
+        for (int i = 0; i < total; i++) {
+            final int index = i;
+            com.fongmi.android.tv.api.Douban.getCategoryList(HOT_CATS[i][1], 10, list -> {
+                results.set(index, list);
+                if (++done[0] == total) App.post(() -> applyCategoryHot(results));
+            });
+        }
+    }
+
+    /** 五类都到齐再一次性铺开，保证「电视剧/电影/综艺/动漫/短剧」顺序固定。 */
+    private void applyCategoryHot(java.util.List<java.util.List<com.fongmi.android.tv.bean.Vod>> results) {
+        if (isFinishing()) return;
+        try {
+            org.json.JSONArray data = new org.json.JSONArray();
+            boolean any = false;
+            for (int i = 0; i < HOT_CATS.length; i++) {
+                java.util.List<com.fongmi.android.tv.bean.Vod> list = results.get(i);
+                if (list == null || list.isEmpty()) continue;
+                data.put(new org.json.JSONObject().put("title", HOT_DIVIDER + HOT_CATS[i][0]));
+                for (com.fongmi.android.tv.bean.Vod vod : list) {
+                    String name = vod.getName();
+                    if (TextUtils.isEmpty(name)) continue;
+                    data.put(new org.json.JSONObject().put("title", name));
+                }
+                any = true;
+            }
+            if (!any) {
+                // 豆瓣一个都没拉到，退回后台热词 / 360kan
+                BoxApi.table("box_hotsearch", rows -> {
+                    String json = hotFromTable(rows);
+                    if (!TextUtils.isEmpty(json)) {
+                        App.post(() -> setAdapter(json, true));
+                        return;
+                    }
+                    OkHttp.newCall("https://api.web.360kan.com/v1/rank?cat=1", Map.of(HttpHeaders.REFERER, "https://www.360kan.com/rank/general")).enqueue(getCallback(true));
+                });
                 return;
             }
-            OkHttp.newCall("https://api.web.360kan.com/v1/rank?cat=1", Map.of(HttpHeaders.REFERER, "https://www.360kan.com/rank/general")).enqueue(getCallback(true));
-        });
+            org.json.JSONObject root = new org.json.JSONObject();
+            root.put("data", data);
+            // 直接铺词条：setAdapter(save=false) 在关键词为空时会直接 return（那是给联想词用的），
+            // 而且这里也不该写进热搜缓存（缓存带 ▎ 分隔符，下次读出来很怪）
+            mWordAdapter.setItems(Word.objectFrom(root.toString()).getData());
+        } catch (Throwable e) {
+            android.util.Log.d("HotED", "applyCategoryHot error: " + e);
+        }
     }
 
     /** 把后台的搜索推荐表转成 Word 认的 {"data":[{"title":...}]} 结构。 */
@@ -193,6 +245,8 @@ public class SearchActivity extends BaseActivity implements WordAdapter.OnClickL
 
     @Override
     public void onItemClick(String text) {
+        // 分类分隔条（▎电视剧 这种）只作标题，点了不搜索
+        if (text != null && text.startsWith(HOT_DIVIDER)) return;
         setKeyword(text);
         onSearch();
     }
