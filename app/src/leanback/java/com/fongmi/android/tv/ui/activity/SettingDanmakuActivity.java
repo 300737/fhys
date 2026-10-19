@@ -9,6 +9,7 @@ import android.view.View;
 import androidx.viewbinding.ViewBinding;
 
 import com.fongmi.android.tv.R;
+import com.fongmi.android.tv.api.config.VodConfig;
 import com.fongmi.android.tv.databinding.ActivitySettingDanmakuBinding;
 import com.fongmi.android.tv.impl.DanmakuListener;
 import com.fongmi.android.tv.setting.DanmakuSetting;
@@ -37,11 +38,11 @@ public class SettingDanmakuActivity extends BaseActivity implements DanmakuListe
         if (!TextUtils.isEmpty(manual)) {
             return getString(DanmakuSetting.isValidApiUrl(manual) ? R.string.danmaku_api_manual : R.string.danmaku_api_invalid);
         }
-        String online = DanmakuSetting.getEffectiveApiUrl();
+        String online = VodConfig.get().getConfig().getDanmaku();
         if (!TextUtils.isEmpty(online)) {
             return getString(DanmakuSetting.isValidApiUrl(online) ? R.string.danmaku_api_online : R.string.danmaku_api_invalid);
         }
-        return getString(R.string.danmaku_api_unset);
+        return getString(R.string.danmaku_api_builtin);
     }
 
     @Override
@@ -52,7 +53,7 @@ public class SettingDanmakuActivity extends BaseActivity implements DanmakuListe
     @Override
     protected void initView(Bundle savedInstanceState) {
         mBinding.danmakuLoad.requestFocus();
-        mBinding.danmakuApiText.setText(getApiStatus());
+        updateApiText();
         mBinding.danmakuAutoText.setText(getSwitch(DanmakuSetting.isAuto()));
         mBinding.danmakuLoadText.setText(getSwitch(DanmakuSetting.isLoad()));
         mBinding.danmakuSpiderText.setText(getSwitch(DanmakuSetting.isSpiderFirst()));
@@ -91,6 +92,11 @@ public class SettingDanmakuActivity extends BaseActivity implements DanmakuListe
         mBinding.danmakuSpider.setVisibility(show ? View.VISIBLE : View.GONE);
     }
 
+    /** 让「接口地址」项直接把当前生效地址露出来，不点进去也能看见用的是哪一套。 */
+    private void updateApiText() {
+        mBinding.danmakuApiText.setText(getApiStatus() + "\n" + DanmakuSetting.getEffectiveApiUrl());
+    }
+
     private void onDanmakuApi(View view) {
         DanmakuApiDialog.show(this);
     }
@@ -98,7 +104,7 @@ public class SettingDanmakuActivity extends BaseActivity implements DanmakuListe
     @Override
     public void setDanmakuApi(String url) {
         DanmakuSetting.putApiUrl(url);
-        mBinding.danmakuApiText.setText(getApiStatus());
+        updateApiText();
         updateAutoVisibility();
     }
 

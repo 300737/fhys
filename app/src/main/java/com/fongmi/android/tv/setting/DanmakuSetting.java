@@ -277,10 +277,24 @@ public class DanmakuSetting {
         Prefers.put("danmaku_show_special", value);
     }
 
+    /**
+     * 内置兜底的弹幕接口（弹弹play 协议基址）。
+     * 以前这里只认「手填 > 在线配置」，两者都空就直接没弹幕，用户还得用遥控器
+     * 敲一长串 URL —— 现在内置一份，装好就有，想换就在设置页手填覆盖。
+     */
+    public static final String BUILTIN_API = "https://api.612526.xyz";
+
     public static String getEffectiveApiUrl() {
         String userUrl = getApiUrl();
         if (!TextUtils.isEmpty(userUrl)) return userUrl;
-        return VodConfig.get().getConfig().getDanmaku();
+        String online = VodConfig.get().getConfig().getDanmaku();
+        if (!TextUtils.isEmpty(online)) return online;
+        return BUILTIN_API;
+    }
+
+    /** 当前生效的接口地址是不是内置的那一套（设置页用来区分来源）。 */
+    public static boolean isBuiltinApi() {
+        return TextUtils.isEmpty(getApiUrl()) && TextUtils.isEmpty(VodConfig.get().getConfig().getDanmaku());
     }
 
     public static void resetAppearance() {
