@@ -12,6 +12,7 @@ import android.os.Bundle;
 import android.os.SystemClock;
 import android.provider.Settings;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 
@@ -191,6 +192,7 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
     private ListRow mDoubanRow;
     private ListRow mBoxRow;
     private boolean mBoxChecked;
+    private final List<Vod> mBoxItems = new ArrayList<>();
 
     /**
      * 读取内置的爱奇艺推荐数据（assets/iqiyi/recommends.json）。
@@ -417,21 +419,31 @@ private void addDoubanRow() {
                 vod.setSite(site);
                 list.add(vod);
             }
-            if (list.isEmpty()) return;
-            App.post(() -> addBoxRow(list));
+            if (list.isEmpty()) {
+                Log.d("BoxApi", "box_home 过滤后为空，不插入精选行");
+                return;
+            }
+            Log.d("BoxApi", "box_home 可用 " + list.size() + " 条，等首页内容加载完再插入");
+            App.post(() -> {
+                mBoxItems.clear();
+                mBoxItems.addAll(list);
+                addBoxRow();
+            });
         });
     }
 
-    private void addBoxRow(List<Vod> items) {
-        if (isFinishing() || items.isEmpty()) return;
+    private void addBoxRow() {
+        if (isFinishing() || mBoxItems.isEmpty()) return;
         if (mBoxRow != null) {
             int old = mAdapter.indexOf(mBoxRow);
             if (old != -1) mAdapter.removeItems(old, 1);
         }
         ArrayObjectAdapter adapter = new ArrayObjectAdapter(new VodPresenter(this, Style.rect()).scale(0.8f));
-        adapter.addAll(0, items);
+        adapter.addAll(0, new ArrayList<>(mBoxItems));
         mBoxRow = new ListRow(adapter);
-        mAdapter.add(Math.min(getRecommendIndex(), mAdapter.size()), mBoxRow);
+        int index = Math.min(Math.max(getRecommendIndex(), 0), mAdapter.size());
+        mAdapter.add(index, mBoxRow);
+        android.util.Log.d("BoxApi", "精选行已插入 index=" + index + " 共 " + mBoxItems.size() + " 条, adapter size=" + mAdapter.size());
     }
 
     /** 1.0.577 这种逐段比较，缺位按 0 算。 */
@@ -770,6 +782,8 @@ private void addDoubanRow() {
         Style style = result.getStyle(getHome().getStyle());
         if (style.isList()) mAdapter.addAll(mAdapter.size(), gridList);
         else addGrid(gridList, style);
+        // 站点首页内容就绪后再插「精选」行，避免被后面的 addAll 顶到看不见的位置
+        addBoxRow();
     }
 
     private void addGrid(List<Vod> items, Style style) {
