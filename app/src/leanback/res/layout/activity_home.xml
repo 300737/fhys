@@ -15,9 +15,9 @@
         android:layout_height="wrap_content"
         android:animateLayoutChanges="true"
         android:background="@drawable/bg_toolbar"
-        android:paddingStart="22dp"
+        android:paddingStart="24dp"
         android:paddingTop="10dp"
-        android:paddingEnd="26dp"
+        android:paddingEnd="24dp"
         android:paddingBottom="12dp">
 
         <com.fongmi.android.tv.ui.custom.view.WindmillView
@@ -109,7 +109,7 @@
             app:layout_constraintHorizontal_bias="0.5"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintWidth_percent="0.32">
+            app:layout_constraintWidth_percent="0.22">
 
             <com.fongmi.android.tv.ui.custom.view.MarqueeTextView
                 android:id="@+id/notice"
