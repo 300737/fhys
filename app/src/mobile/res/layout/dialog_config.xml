@@ -18,6 +18,7 @@
         android:visibility="gone">
 
         <com.google.android.material.textfield.TextInputEditText
+            android:text=""
             android:id="@+id/name"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -39,6 +40,7 @@
         app:endIconMode="custom">
 
         <com.google.android.material.textfield.TextInputEditText
+            android:text=""
             android:id="@+id/url"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -59,6 +61,7 @@
         android:visibility="gone">
 
         <com.google.android.material.textfield.TextInputEditText
+            android:text=""
             android:id="@+id/ua"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
