@@ -118,6 +118,7 @@ public class VideoActivity extends PlaybackActivity implements CustomKeyDownVod.
     private static final long SKIP_DEBOUNCE_MS = 3000L;
     private static final long SKIP_ARM_MARGIN_MS = 3000L;  // 退出片尾区要留出这么多余量才算真的播过了
     private static final String TAG_SKIP = "SkipED";   // 片尾跳集诊断日志
+    private static final String TAG_DANMAKU = "DanmakuED";  // 弹幕全链路诊断日志
     private Observer<Result> mObserveDetail;
     private Observer<Result> mObservePlayer;
     private Observer<Result> mObserveSearch;
@@ -638,10 +639,14 @@ public class VideoActivity extends PlaybackActivity implements CustomKeyDownVod.
         }
 
         startPlayer(getHistoryKey(), result, isUseParse(), getSite().getTimeout(), buildMetadata());
-        if (DanmakuApi.canSearch()) DanmakuApi.search(mHistory.getVodName(), getEpisode().getName(), result.getRealUrl(), danmaku -> {
-            if (DanmakuSetting.isSpiderFirst() && !result.getDanmaku().isEmpty()) player().addDanmaku(danmaku);
-            else player().setDanmaku(danmaku);
-        });
+        if (DanmakuApi.canSearch()) {
+            DanmakuApi.search(mHistory.getVodName(), getEpisode().getName(), result.getRealUrl(), danmaku -> {
+                if (DanmakuSetting.isSpiderFirst() && !result.getDanmaku().isEmpty()) player().addDanmaku(danmaku);
+                else player().setDanmaku(danmaku);
+            });
+        } else {
+            Log.d(TAG_DANMAKU, "不发弹幕请求: isLoad=" + DanmakuSetting.isLoad() + " isAuto=" + DanmakuSetting.isAuto() + " api=" + DanmakuSetting.getEffectiveApiUrl());
+        }
     }
 
     @Override

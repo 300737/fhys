@@ -3,6 +3,7 @@ package com.fongmi.android.tv.player;
 import android.net.Uri;
 import android.os.SystemClock;
 import android.text.TextUtils;
+import android.util.Log;
 import com.github.catvod.crawler.SpiderDebug;
 import java.io.IOException;
 
@@ -45,6 +46,8 @@ import java.util.Locale;
 import java.util.Map;
 
 public class PlayerManager implements ParseCallback {
+
+    private static final String TAG_DANMAKU = "DanmakuED";   // 弹幕全链路诊断日志
 
     private final Runnable runnable;
     private final Callback callback;
@@ -271,15 +274,20 @@ public class PlayerManager implements ParseCallback {
         controller.setOkHttpClient(OkHttp.player());
         controller.setConfig(DanmakuSetting.getConfig());
         controller.setEnabled(DanmakuSetting.isShow());
+        Log.d(TAG_DANMAKU, "controller ready: enabled=" + DanmakuSetting.isShow() + " (isShow 默认已改为开，关过就是 false)");
         controller.setListener(new DanmakuController.Listener() {
             @Override
             public void onLoadCompleted(Uri uri, int count) {
+                // 无条件打日志：以前只有开 SpiderDebug 才记，真机上永远是黑的，
+                // 分不清「没发请求」「请求失败」还是「加载成功但没显示」
+                Log.d(TAG_DANMAKU, "load completed count=" + count + " url=" + (uri == null ? "" : uri));
                 logDanmakuLoad("completed", uri, count, null);
                 finishDanmakuLoad(uri);
             }
 
             @Override
             public void onLoadError(Uri uri, IOException error) {
+                Log.d(TAG_DANMAKU, "load error url=" + (uri == null ? "" : uri) + " err=" + (error == null ? "" : error.getMessage()));
                 logDanmakuLoad("error", uri, -1, error);
                 finishDanmakuLoad(uri);
             }
@@ -471,25 +479,29 @@ public class PlayerManager implements ParseCallback {
     private void setDanmaku(Danmaku item, boolean force) {
         if (item.isEmpty()) {
             if (spec != null) spec.setDanmaku(item);
+            Log.d(TAG_DANMAKU, "drop: empty source (接口没返回可用弹幕地址) name=" + item.getName());
             clearDanmaku("empty_source");
             return;
         }
-        if (danmakuController == null) return;
+        if (danmakuController == null) {
+            Log.d(TAG_DANMAKU, "drop: controller 还没挂上，弹幕被丢弃 name=" + item.getName());
+            return;
+        }
         String url = DanmakuUrlPolicy.normalize(DanmakuSetting.getValidApiUrl(), item.getRealUrl());
         DanmakuUrlPolicy.SourceType sourceType = DanmakuUrlPolicy.classify(url);
         if (!sourceType.isSupported()) {
             if (spec != null) spec.setDanmaku(item);
-            if (SpiderDebug.isEnabled()) SpiderDebug.log("danmaku", "reject %s", DanmakuUrlPolicy.logSummary(url));
+            Log.d(TAG_DANMAKU, "drop: unsupported source " + DanmakuUrlPolicy.logSummary(url));
             clearDanmaku("unsupported_source");
             return;
         }
         String key = normalizeDanmakuKey(url);
         if (!force && TextUtils.equals(currentDanmakuUrl, url)) {
-            if (SpiderDebug.isEnabled()) SpiderDebug.log("danmaku", "skip same %s", DanmakuUrlPolicy.logSummary(url));
+            Log.d(TAG_DANMAKU, "skip: same url " + DanmakuUrlPolicy.logSummary(url));
             return;
         }
         if (force && shouldSkipForcedDanmakuReload(key)) {
-            if (SpiderDebug.isEnabled()) SpiderDebug.log("danmaku", "skip duplicate reload key=%s %s", summarizeUrl(key), DanmakuUrlPolicy.logSummary(url));
+            Log.d(TAG_DANMAKU, "skip: duplicate reload " + summarizeUrl(key));
             return;
         }
         if (spec != null) spec.setDanmaku(item);
@@ -509,6 +521,7 @@ public class PlayerManager implements ParseCallback {
         loadingDanmakuKey = key;
         danmakuLoadStartedAtMs = SystemClock.elapsedRealtime();
         danmakuLoadInProgress = true;
+        Log.d(TAG_DANMAKU, (force ? "reload" : "load") + " name=" + item.getName() + " " + DanmakuUrlPolicy.logSummary(url) + " show=" + DanmakuSetting.isShow());
         if (SpiderDebug.isEnabled()) SpiderDebug.log("danmaku", "%s name=%s %s key=%s", force ? "reload" : "load", item.getName(), DanmakuUrlPolicy.logSummary(url), summarizeUrl(key));
         danmakuController.setDataSource(Uri.parse(url));
     }
@@ -580,6 +593,7 @@ public class PlayerManager implements ParseCallback {
     }
 
     private void clearDanmaku(String reason) {
+        Log.d(TAG_DANMAKU, "clear reason=" + reason + " current=" + DanmakuUrlPolicy.logSummary(currentDanmakuUrl));
         if (SpiderDebug.isEnabled()) SpiderDebug.log("danmaku", "clear reason=%s current=%s", reason, DanmakuUrlPolicy.logSummary(currentDanmakuUrl));
         stopLiveDanmakuSession(reason);
         liveDanmakuBatcher.clear();

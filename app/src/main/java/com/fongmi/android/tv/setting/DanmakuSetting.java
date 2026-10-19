@@ -47,8 +47,14 @@ public class DanmakuSetting {
         Prefers.put("danmaku_api_url", url);
     }
 
+    /**
+     * 弹幕「显示」开关。默认开：之前这里默认 false（Prefers.getBoolean 没给默认值），
+     * 于是接口就算正常返回了弹幕，控制器也处于 disabled 状态，屏幕上一条都看不到，
+     * 表现和「接口坏了」一模一样 —— 和 isLoad()/isAuto() 是同一类坑。
+     * 用户手动关过的话 Prefers 里存着 false，不会被这个默认值覆盖。
+     */
     public static boolean isShow() {
-        return Prefers.getBoolean("danmaku_show");
+        return Prefers.getBoolean("danmaku_show", true);
     }
 
     public static void putShow(boolean danmakuShow) {

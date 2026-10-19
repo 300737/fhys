@@ -71,7 +71,9 @@ public class DanmakuApi {
     }
 
     public static void search(String name, String episode, String playUrl, Consumer<Danmaku> found) {
-        newCall(name, episode, playUrl).enqueue(new Callback() {
+        Call call = newCall(name, episode, playUrl);
+        Log.d(TAG, "danmaku request: " + call.request().url() + " (playUrl=" + (TextUtils.isEmpty(playUrl) ? "空" : "有") + ")");
+        call.enqueue(new Callback() {
             @Override
             public void onResponse(@NonNull Call call, @NonNull Response response) {
                 try {

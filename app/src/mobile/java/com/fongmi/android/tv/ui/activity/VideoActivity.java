@@ -121,6 +121,7 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
     private static final long SKIP_DEBOUNCE_MS = 3000L;
     private static final long SKIP_ARM_MARGIN_MS = 3000L;
     private static final String TAG_SKIP = "SkipED";
+    private static final String TAG_DANMAKU = "DanmakuED";  // 弹幕全链路诊断日志
 
     private ActivityVideoBinding mBinding;
     private ViewGroup.LayoutParams mFrameParams;
@@ -649,10 +650,14 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
             }
         }
         startPlayer(getHistoryKey(), result, isUseParse(), getSite().getTimeout(), buildMetadata());
-        if (DanmakuApi.canSearch()) DanmakuApi.search(mHistory.getVodName(), getEpisode().getName(), result.getRealUrl(), danmaku -> {
-            if (DanmakuSetting.isSpiderFirst() && !result.getDanmaku().isEmpty()) player().addDanmaku(danmaku);
-            else player().setDanmaku(danmaku);
-        });
+        if (DanmakuApi.canSearch()) {
+            DanmakuApi.search(mHistory.getVodName(), getEpisode().getName(), result.getRealUrl(), danmaku -> {
+                if (DanmakuSetting.isSpiderFirst() && !result.getDanmaku().isEmpty()) player().addDanmaku(danmaku);
+                else player().setDanmaku(danmaku);
+            });
+        } else {
+            Log.d(TAG_DANMAKU, "不发弹幕请求: isLoad=" + DanmakuSetting.isLoad() + " isAuto=" + DanmakuSetting.isAuto() + " api=" + DanmakuSetting.getEffectiveApiUrl());
+        }
     }
 
     @Override
