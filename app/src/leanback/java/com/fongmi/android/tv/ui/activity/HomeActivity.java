@@ -453,21 +453,7 @@ private void addDoubanRow() {
         mBinding.push.setOnClickListener(view -> PushActivity.start(this));
         if (mBinding.history != null) mBinding.history.setOnClickListener(view -> HistoryActivity.start(this));
         mBinding.setting.setOnClickListener(view -> SettingActivity.start(this));
-        mBinding.net.setOnClickListener(view -> {
-            try {
-                startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS));
-            } catch (Exception e) {
-                try {
-                    startActivity(new Intent(Settings.ACTION_WIRELESS_SETTINGS));
-                } catch (Exception e2) {
-                    try {
-                        startActivity(new Intent(Settings.ACTION_SETTINGS));
-                    } catch (Exception e3) {
-                        // ignore
-                    }
-                }
-            }
-        });
+
         mBinding.recycler.addOnChildViewHolderSelectedListener(new OnChildViewHolderSelectedListener() {
             @Override
             public void onChildViewHolderSelected(@NonNull RecyclerView parent, @Nullable RecyclerView.ViewHolder child, int position, int subposition) {
@@ -910,22 +896,12 @@ private void addDoubanRow() {
     }
 
     private void updateNetworkState() {
-        int state = Util.getNetworkState();
-        if (state == 1) {
-            mBinding.net.setImageResource(R.drawable.ic_net_wifi);
-            mBinding.net.setVisibility(View.VISIBLE);
-        } else if (state == 2) {
-            mBinding.net.setImageResource(R.drawable.ic_net_ethernet);
-            mBinding.net.setVisibility(View.VISIBLE);
-        } else {
-            mBinding.net.setImageResource(R.drawable.ic_net_disconnected);
-            mBinding.net.setVisibility(View.VISIBLE);
-        }
+        // 顶栏的 WiFi 图标已按要求移除，这里只保留网络状态检测（其它地方还在用 Util.getNetworkState）
     }
 
     private boolean isToolbarFocused() {
         View focus = getCurrentFocus();
-        return focus == mBinding.search || focus == mBinding.push || focus == mBinding.history || focus == mBinding.setting || focus == mBinding.net;
+        return focus == mBinding.search || focus == mBinding.push || focus == mBinding.history || focus == mBinding.setting || focus == mBinding.quickSearch;
     }
 
     @Override

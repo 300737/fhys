@@ -44,6 +44,7 @@
     <string name="nas_style_rect">Poster</string>
     <string name="nas_style_oval">Circle</string>
     <string name="toolbar_keep">Keep</string>
+    <string name="toolbar_search">Search</string>
     <string name="toolbar_setting">Setting</string>
     <string name="search_hint">Search movie, actor, director</string>
 </resources>

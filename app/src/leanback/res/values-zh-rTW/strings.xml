@@ -44,6 +44,7 @@
     <string name="nas_style_rect">縮圖(海報)</string>
     <string name="nas_style_oval">圓形</string>
     <string name="toolbar_keep">收藏</string>
+    <string name="toolbar_search">搜尋</string>
     <string name="toolbar_setting">設定</string>
     <string name="search_hint">搜尋影片、演員、導演</string>
 </resources>
