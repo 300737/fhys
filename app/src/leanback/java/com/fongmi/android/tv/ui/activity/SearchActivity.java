@@ -129,10 +129,10 @@ public class SearchActivity extends BaseActivity implements WordAdapter.OnClickL
 
     // 搜索页热搜按分类出，内容全部是豆瓣当前高分
     private static final String[][] HOT_CATS = {
-            {"电视剧", "电视剧"}, {"电影", "电影"}, {"综艺", "综艺"},
-            {"动漫", "动漫"}, {"短剧", "短片"}};
-    /** 分类分隔符：带这个前缀的条目只当标题用，点了不搜索 */
-    private static final String HOT_DIVIDER = "▎";
+            {"电视剧榜", "电视剧"}, {"电影榜", "电影"}, {"综艺榜", "综艺"},
+            {"动漫榜", "动漫"}, {"短剧榜", "短片"}};
+    /** 分类分隔符：带这个前缀的条目只当标题用，点了不搜索（样式由 WordAdapter 处理） */
+    private static final String HOT_DIVIDER = WordAdapter.DIVIDER;
 
     private void getHot() {
         mBinding.word.setText(R.string.search_hot);

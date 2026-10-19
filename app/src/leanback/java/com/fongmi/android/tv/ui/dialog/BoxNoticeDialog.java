@@ -75,8 +75,11 @@ public class BoxNoticeDialog extends BaseAlertDialog {
 
     @Override
     protected void initView() {
-        binding.title.setText(TextUtils.isEmpty(title) ? "" : title);
-        binding.content.setText(TextUtils.isEmpty(content) ? "" : content);
+        // 弹的是后台配的「内容」，标题只是后台记录用的名字，不往屏幕上放。
+        // 只有内容为空时才退回显示标题，免得弹出一个空框。
+        boolean hasContent = !TextUtils.isEmpty(content);
+        binding.content.setText(hasContent ? content : (TextUtils.isEmpty(title) ? "" : title));
+        binding.title.setVisibility(View.GONE);
         if (TextUtils.isEmpty(image)) {
             binding.image.setVisibility(View.GONE);
         } else {
