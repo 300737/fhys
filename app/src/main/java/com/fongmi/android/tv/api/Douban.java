@@ -133,6 +133,23 @@ public class Douban {
         return list;
     }
 
+    /**
+     * 豆瓣 App 用的 rexxar 口碑榜接口（不是网页版 j/new_search_subjects）。
+     * 网页版那个接口对机房/盒子 IP 反爬很凶，实测直接返回
+     * {"msg":"检测到有异常请求从您的IP发出，请登录再试!"}，四个榜全空；
+     * rexxar 这组接口反爬宽松，且本身就是「口碑榜」，天然是高分内容。
+     */
+    private static final java.util.Map<String, String> COLLECTION = new java.util.HashMap<>();
+    private static final String REXXAR = "https://m.douban.com/rexxar/api/v2/subject_collection/%s/items?start=0&count=20&for_mobile=1";
+    private static final String REXXAR_UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148";
+
+    static {
+        COLLECTION.put("电视剧", "tv_chinese_best_weekly");   // 华语口碑剧集榜
+        COLLECTION.put("电影", "movie_weekly_best");           // 一周口碑电影榜
+        COLLECTION.put("综艺", "show_chinese_best_weekly");    // 华语口碑综艺榜
+        COLLECTION.put("动漫", "tv_animation");                // 动画口碑榜
+    }
+
     /** 分类高分榜缓存：key = 豆瓣标签（电视剧/电影/综艺/动漫） */
     private static final java.util.Map<String, List<Vod>> CAT_CACHE = new java.util.concurrent.ConcurrentHashMap<>();
 
@@ -218,6 +235,56 @@ public class Douban {
     }
 
     public static List<Vod> fetchCategoryList(String tag, int want) {
+        List<Vod> list = fetchCollection(tag, want);
+        if (!list.isEmpty()) return list;
+        return fetchSearchSubjects(tag, want);
+    }
+
+    /** rexxar 口碑榜 */
+    public static List<Vod> fetchCollection(String tag, int want) {
+        List<Vod> list = new ArrayList<>();
+        String collection = COLLECTION.get(tag);
+        if (collection == null) return list;
+        try {
+            Request request = new Request.Builder()
+                    .url(String.format(REXXAR, collection))
+                    .header("User-Agent", REXXAR_UA)
+                    .header("Referer", "https://m.douban.com/subject_collection/" + collection)
+                    .build();
+            try (Response response = OkHttp.client(8000).newCall(request).execute()) {
+                if (!response.isSuccessful() || response.body() == null) return list;
+                JSONObject root = new JSONObject(response.body().string());
+                JSONArray items = root.optJSONArray("subject_collection_items");
+                if (items == null) return list;
+                for (int i = 0; i < items.length() && list.size() < want; i++) {
+                    JSONObject item = items.optJSONObject(i);
+                    if (item == null) continue;
+                    String title = item.optString("title").trim();
+                    if (TextUtils.isEmpty(title)) continue;
+                    String cover = "";
+                    JSONObject pic = item.optJSONObject("cover");
+                    if (pic != null) cover = pic.optString("url", "").trim();
+                    if (TextUtils.isEmpty(cover)) cover = item.optString("pic", "").trim();
+                    String rate = "";
+                    JSONObject rating = item.optJSONObject("rating");
+                    if (rating != null) rate = rating.optString("value", "").trim();
+                    Vod vod = new Vod();
+                    vod.setId(item.optString("id", ""));
+                    vod.setName(title);
+                    vod.setPic(cover);
+                    vod.setRemarks(TextUtils.isEmpty(rate) ? "豆瓣口碑" : "豆瓣 " + rate);
+                    list.add(vod);
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "fetchCollection " + tag + " exception: " + e.getMessage());
+        }
+        Log.d(TAG, "fetchCollection " + tag + " size=" + list.size());
+        return list;
+    }
+
+    /** 网页版搜索榜（rexxar 挂了才走这里，容易被反爬拦，只当兜底） */
+    public static List<Vod> fetchSearchSubjects(String tag, int want) {
         List<Vod> list = new ArrayList<>();
         java.util.Set<String> seen = new java.util.HashSet<>();
         try {
