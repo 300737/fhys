@@ -159,7 +159,7 @@ public class SearchActivity extends BaseActivity implements WordAdapter.OnClickL
         for (int i = 0; i < total; i++) {
             final int index = i;
             // force=true：每次进搜索页都实时向豆瓣要最新榜（60 秒内不重复打，避免限流）
-            com.fongmi.android.tv.api.Douban.getCategoryList(HOT_CATS[i][1], 10, true, list -> {
+            com.fongmi.android.tv.api.Douban.getCategoryList(HOT_CATS[i][1], 4, true, list -> {
                 results.set(index, list);
                 // 哪一类先回来就先显示哪一类，不再死等 4 类全齐（之前要等十几秒）
                 App.post(() -> applyCategoryHot(results));

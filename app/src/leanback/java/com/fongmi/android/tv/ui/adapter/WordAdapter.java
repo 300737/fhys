@@ -41,7 +41,7 @@ public class WordAdapter extends BaseDiffAdapter<Word.Data, WordAdapter.ViewHold
         if (header) {
             // 分组标题：独占一行、去掉按钮背景、不参与焦点
             holder.binding.text.setText(text.substring(DIVIDER.length()));
-            holder.binding.text.setTextSize(20);
+            holder.binding.text.setTextSize(18);
             holder.binding.text.setBackground(null);
             holder.binding.text.setFocusable(false);
             holder.binding.text.setFocusableInTouchMode(false);
@@ -49,7 +49,7 @@ public class WordAdapter extends BaseDiffAdapter<Word.Data, WordAdapter.ViewHold
         } else {
             // 普通词条：样式要还原，否则复用会带着标题的样式
             holder.binding.text.setText(text);
-            holder.binding.text.setTextSize(16);
+            holder.binding.text.setTextSize(14);
             holder.binding.text.setBackgroundResource(R.drawable.selector_item_round);
             holder.binding.text.setFocusable(true);
             holder.binding.text.setFocusableInTouchMode(true);

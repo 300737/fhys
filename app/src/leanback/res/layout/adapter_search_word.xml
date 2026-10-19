@@ -4,7 +4,7 @@
     android:id="@+id/text"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="4dp"
+    android:layout_margin="2dp"
     android:gravity="center"
     android:background="@drawable/selector_item_round"
     android:ellipsize="marquee"
@@ -12,5 +12,5 @@
     android:focusableInTouchMode="true"
     android:singleLine="true"
     android:textColor="@color/white"
-    android:textSize="16sp"
+    android:textSize="14sp"
     tools:text="推薦" />

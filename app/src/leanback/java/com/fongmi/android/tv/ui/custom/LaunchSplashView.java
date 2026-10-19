@@ -182,12 +182,8 @@ public class LaunchSplashView extends View {
             float eased = 1f - (1f - tp) * (1f - tp);
             paint.setColor(Color.WHITE);
             paint.setTextSize(titlePx * (0.92f + 0.08f * eased));
-            float bandH = titlePx * 1.9f;
-            float bandY = h * 0.42f - titlePx * 1.15f;
+            // 标题后面那条横贯全屏的半透明色带已去掉，只保留金字招牌
             paint.setShader(null);
-            paint.setColor(0x59060911);
-            paint.setAlpha((int) (0x59 * eased * fade));
-            canvas.drawRect(0, bandY, w, bandY + bandH, paint);
             paint.setShadowLayer(8, 0, 5, 0xDD000000);
             paint.setShader(new android.graphics.LinearGradient(cx(w, 0), 0, w, 0,
                     0xFFFFE082, 0xFFFFB300, android.graphics.Shader.TileMode.CLAMP));
