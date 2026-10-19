@@ -35,7 +35,7 @@ public class DoubanDialog extends BaseAlertDialog {
     protected void initView() {
         String text = Setting.getDouban();
         binding.text.setText(text);
-        binding.text.setHint("http://your-server:8000");
+        binding.text.setHint("http://192.168.1.147:8000");
         binding.text.setSelection(TextUtils.isEmpty(text) ? 0 : text.length());
     }
 

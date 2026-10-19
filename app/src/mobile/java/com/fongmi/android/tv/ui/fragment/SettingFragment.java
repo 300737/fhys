@@ -97,8 +97,7 @@ public class SettingFragment extends BaseFragment implements ConfigListener, Sit
         mBinding.vodUrl.setText(VodConfig.getDesc());
         mBinding.liveUrl.setText(LiveConfig.getDesc());
         mBinding.wallUrl.setText(WallConfig.getDesc());
-        // 版本号 = VERSION_LABEL(1.0.577) + 构建时间，与 MT管理器显示的 versionCode 一致且可追溯构建批次
-        mBinding.versionText.setText(BuildConfig.VERSION_LABEL + "  " + BuildConfig.BUILD_TIME);
+        mBinding.versionText.setText(BuildConfig.VERSION_NAME);
         setOtherText();
         setCacheText();
     }

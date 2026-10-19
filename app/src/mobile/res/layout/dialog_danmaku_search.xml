@@ -23,11 +23,9 @@
             android:background="@drawable/shape_danmaku_search_keyword"
             android:hint="@string/search_keyword"
             android:imeOptions="actionSearch"
-            android:inputType="textCapWords"
+            android:inputType="textCapWords|textAutoCorrect|textAutoComplete"
             android:maxLength="255"
-            android:importantForAutofill="no"
             android:singleLine="true"
-            android:text=""
             android:textSize="14sp" />
 
         <androidx.appcompat.widget.AppCompatImageView
