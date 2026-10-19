@@ -22,6 +22,12 @@
         android:paddingEnd="24dp"
         android:paddingBottom="8dp">
 
+        <com.fongmi.android.tv.ui.custom.view.WindmillView
+            android:id="@+id/windmill"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:layout_marginEnd="10dp" />
+
         <androidx.appcompat.widget.LinearLayoutCompat
             android:id="@+id/setting"
             android:layout_width="wrap_content"
@@ -83,7 +89,7 @@
             android:id="@+id/search"
             android:layout_width="0dp"
             android:layout_height="32dp"
-            android:layout_weight="1"
+            android:layout_weight="55"
             android:layout_marginStart="12dp"
             android:layout_marginEnd="16dp"
             android:background="@drawable/selector_search_bar"
@@ -109,6 +115,11 @@
                 android:visibility="gone" />
 
         </androidx.appcompat.widget.LinearLayoutCompat>
+
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="45" />
 
         <androidx.appcompat.widget.AppCompatImageView
             android:id="@+id/net"
