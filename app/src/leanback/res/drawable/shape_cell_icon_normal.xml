@@ -2,9 +2,9 @@
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
 
-    <!-- 图标格常态：透明（融入所在条目） -->
+    <!-- 图标格常态：透明（融入所在条目），圆角与手机版一致 -->
     <solid android:color="@color/transparent" />
 
-    <corners android:radius="8dp" />
+    <corners android:radius="14dp" />
 
 </shape>

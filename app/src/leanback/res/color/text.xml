@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    通用条目文字色（14 个 adapter 共用）。两种聚焦背景并存：
+    通用条目文字色（14 个 adapter 共用）。常态背景已换成浅紫水晶 → 常态用深字；
+    两种聚焦背景并存：
     ① 实色青底聚焦（selector_item / selector_chip）→ 聚焦+选中时深字
     ② 描边式聚焦（selector_chip_round 等）→ 聚焦时亮青字
 -->
@@ -9,5 +10,5 @@
     <item android:color="@color/nf_focus" android:state_focused="true" />
     <item android:color="@color/nf_text" android:state_selected="true" />
     <item android:color="@color/nf_focus" android:state_checked="true" />
-    <item android:color="@color/nf_text" />
+    <item android:color="@color/nf_on_focus" />
 </selector>
