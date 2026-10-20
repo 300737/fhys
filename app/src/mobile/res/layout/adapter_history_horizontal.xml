@@ -13,7 +13,8 @@
         android:layout_height="match_parent"
         android:scaleType="centerCrop"
         android:background="@color/black_20"
-        app:shapeAppearanceOverlay="@style/Vod.Grid.Large" />
+        app:shapeAppearanceOverlay="@style/Vod.Grid.Large"         app:strokeColor="@color/selector_card_stroke"
+        app:strokeWidth="1.5dp" />
 
     <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/delete"

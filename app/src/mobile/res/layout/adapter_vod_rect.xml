@@ -12,7 +12,8 @@
         android:layout_width="match_parent"
         android:layout_height="80dp"
         android:background="@color/black_20"
-        app:shapeAppearanceOverlay="@style/Vod.Grid.Large" />
+        app:shapeAppearanceOverlay="@style/Vod.Grid.Large"         app:strokeColor="@color/selector_card_stroke"
+        app:strokeWidth="1.5dp" />
 
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/year"
