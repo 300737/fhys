@@ -41,7 +41,7 @@
             android:background="@drawable/shape_accent"
             android:tag="5"
             android:text="@string/timer_5"
-            android:textColor="?attr/colorOnSurface"
+            android:textColor="@color/selector_control_glass"
             android:textSize="14sp" />
 
         <com.google.android.material.textview.MaterialTextView
@@ -53,7 +53,7 @@
             android:background="@drawable/shape_accent"
             android:tag="15"
             android:text="@string/timer_15"
-            android:textColor="?attr/colorOnSurface"
+            android:textColor="@color/selector_control_glass"
             android:textSize="14sp" />
 
         <com.google.android.material.textview.MaterialTextView
@@ -65,7 +65,7 @@
             android:background="@drawable/shape_accent"
             android:tag="30"
             android:text="@string/timer_30"
-            android:textColor="?attr/colorOnSurface"
+            android:textColor="@color/selector_control_glass"
             android:textSize="14sp" />
 
         <com.google.android.material.textview.MaterialTextView
@@ -76,7 +76,7 @@
             android:background="@drawable/shape_accent"
             android:tag="60"
             android:text="@string/timer_60"
-            android:textColor="?attr/colorOnSurface"
+            android:textColor="@color/selector_control_glass"
             android:textSize="14sp" />
 
     </androidx.appcompat.widget.LinearLayoutCompat>
