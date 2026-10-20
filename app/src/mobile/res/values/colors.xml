@@ -17,6 +17,8 @@
     <color name="player_black">#000000</color>
 
     <!-- 基础语义色 -->
+    <color name="crystal_fab_tint">#B3A78BFA</color>
+    <color name="crystal_fab_stroke">#CCD9CCFF</color>
     <color name="nf_bg">#1A1240</color>            <!-- 保留；页面实际用 bg_page 渐变 -->
     <color name="nf_surface">#2E2566</color>       <!-- 面板 / 播放器控制条 -->
     <color name="nf_card">#3D3088</color>          <!-- 控件常态（替代 white_10）——满屏卡片主色 -->
