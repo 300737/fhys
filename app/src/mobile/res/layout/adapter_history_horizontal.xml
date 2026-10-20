@@ -13,8 +13,15 @@
         android:layout_height="match_parent"
         android:scaleType="centerCrop"
         android:background="@color/black_20"
-        app:shapeAppearanceOverlay="@style/Vod.Grid.Large"         app:strokeColor="@color/selector_card_stroke"
-        app:strokeWidth="1.5dp" />
+        app:shapeAppearanceOverlay="@style/Vod.Grid.Large" />
+    <View
+        android:id="@+id/scrim"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:layout_alignBottom="@+id/image"
+        android:background="@drawable/card_scrim" />
+
+
 
     <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/delete"
