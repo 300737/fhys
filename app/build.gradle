@@ -61,6 +61,10 @@ android {
         // 本工程用 flavorDimensions="abi" 按架构拆包，架构限定必须留在 productFlavors 里
         // （arm64_v8a flavor 只留 arm64-v8a）。若在 defaultConfig 放宽成两个架构，
         // 变体 armeabi_v7a 会把两套 so 都打进去，包从 103MB 涨到 141MB。
+        // 资源瘦身：只保留中文资源。媒体库/AppCompat/Material 自带几十种语言，
+        // 对纯中文用户是纯浪费，裁掉后 resources.arsc 与 res/ 明显变小。
+        resourceConfigurations += ["zh"]
+
         javaCompileOptions {
             annotationProcessorOptions {
                 arguments = ["room.schemaLocation": "$projectDir/schemas".toString(), "eventBusIndex": "com.fongmi.android.tv.event.EventIndex"]
@@ -120,6 +124,19 @@ android {
     buildFeatures {
         buildConfig = true
         viewBinding = true
+    }
+
+    // 体积瘦身：native 库在 APK 内改为压缩存放（useLegacyPackaging = true）。
+    // 现状：AGP 默认把 .so 原样 STORED 进 APK，66.7MB 的 so 在 93.7MB 的包里一点不缩；
+    // 打开压缩后下载体积明显下降，代价是安装时系统要解压到 /data（占点机身存储），
+    // 对电视盒这种机身空间充足的场景完全划算。
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+        resources {
+            excludes += ["META-INF/*.kotlin_module", "META-INF/DEPENDENCIES", "META-INF/NOTICE*", "META-INF/LICENSE*", "META-INF/*.version", "META-INF/*.properties", "kotlin/**", "DebugProbesKt.bin"]
+        }
     }
 
     buildTypes {
