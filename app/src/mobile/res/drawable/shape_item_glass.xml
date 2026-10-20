@@ -15,8 +15,8 @@
                             <corners android:radius="28dp" />
                             <gradient
                                 android:angle="270"
-                                android:startColor="#E0C4A8FF"
-                                android:endColor="#E67C4FE0" />
+                                android:startColor="#E69061F9"
+                                android:endColor="#E66D28D9" />
                         </shape>
                     </item>
                     <item
@@ -32,7 +32,7 @@
                                 android:topRightRadius="18dp" />
                             <gradient
                                 android:angle="270"
-                                android:startColor="#8CFFFFFF"
+                                android:startColor="#B3FFFFFF"
                                 android:endColor="#00FFFFFF" />
                         </shape>
                     </item>
@@ -61,8 +61,8 @@
                             <corners android:radius="28dp" />
                             <gradient
                                 android:angle="270"
-                                android:startColor="#D8C9AEFF"
-                                android:endColor="#BF9163F0" />
+                                android:startColor="#DBA78BFA"
+                                android:endColor="#D9826FE8" />
                         </shape>
                     </item>
                     <item
@@ -78,7 +78,7 @@
                                 android:topRightRadius="18dp" />
                             <gradient
                                 android:angle="270"
-                                android:startColor="#66FFFFFF"
+                                android:startColor="#99FFFFFF"
                                 android:endColor="#00FFFFFF" />
                         </shape>
                     </item>
