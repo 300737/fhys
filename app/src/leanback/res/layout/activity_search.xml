@@ -71,7 +71,7 @@
                 android:focusable="true"
                 android:padding="10dp"
                 android:src="@drawable/ic_keyboard_back"
-                app:tint="@color/white" />
+                app:tint="@color/selector_category_text" />
 
             <androidx.appcompat.widget.AppCompatImageView
                 android:id="@+id/keySearch"
@@ -83,7 +83,7 @@
                 android:focusable="true"
                 android:padding="10dp"
                 android:src="@drawable/ic_keyboard_search"
-                app:tint="@color/white" />
+                app:tint="@color/selector_category_text" />
 
             <androidx.appcompat.widget.AppCompatImageView
                 android:id="@+id/keyHome"
@@ -94,7 +94,7 @@
                 android:focusable="true"
                 android:padding="10dp"
                 android:src="@drawable/ic_setting_home"
-                app:tint="@color/white" />
+                app:tint="@color/selector_category_text" />
 
         </androidx.appcompat.widget.LinearLayoutCompat>
 
@@ -156,7 +156,7 @@
                         android:background="@drawable/selector_clear_button"
                         android:focusable="true"
                         android:src="@drawable/ic_vod_delete"
-                        app:tint="@color/white" />
+                        app:tint="@color/selector_category_text" />
 
                 </androidx.appcompat.widget.LinearLayoutCompat>
 

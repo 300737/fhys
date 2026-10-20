@@ -1,14 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 第一排（设置/推送/历史/快捷搜索）+ 搜索页顶部按钮：选中态与第二排分类页签一致（亮青实色 #5EE7FF） -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:state_focused="true">
         <shape android:shape="rectangle">
-            <solid android:color="@color/white_15" />
+            <solid android:color="@color/nf_focus" />
             <corners android:radius="999dp" />
         </shape>
     </item>
     <item android:state_pressed="true">
         <shape android:shape="rectangle">
-            <solid android:color="@color/white_15" />
+            <solid android:color="@color/nf_focus" />
             <corners android:radius="999dp" />
         </shape>
     </item>
