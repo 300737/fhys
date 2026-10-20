@@ -13,15 +13,9 @@
         android:layout_height="match_parent"
         android:scaleType="centerCrop"
         android:background="@color/black_20"
-        app:shapeAppearanceOverlay="@style/Vod.Grid.Large" />
-    <View
-        android:id="@+id/scrim"
-        android:layout_width="match_parent"
-        android:layout_height="64dp"
-        android:layout_alignBottom="@+id/image"
-        android:background="@drawable/card_scrim" />
-
-
+        app:shapeAppearanceOverlay="@style/Vod.Grid.Large"
+        app:strokeColor="@color/selector_card_stroke"
+        app:strokeWidth="1.5dp" />
 
     <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/delete"
@@ -37,7 +31,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:background="@drawable/shape_vod_name"
         android:orientation="vertical"
         android:paddingTop="4dp"
         android:paddingBottom="4dp"
@@ -51,6 +44,10 @@
             android:ellipsize="end"
             android:gravity="center"
             android:maxLines="1"
+            android:shadowColor="#CC000000"
+            android:shadowDx="0"
+            android:shadowDy="1"
+            android:shadowRadius="4"
             android:textColor="@color/white"
             android:textSize="12sp"
             tools:text="四度" />
@@ -63,7 +60,6 @@
             android:layout_marginStart="2dp"
             android:layout_marginEnd="2dp"
             android:layout_marginBottom="0dp"
-            android:background="@color/black_20"
             app:indicatorColor="@color/white"
             app:trackColor="@color/transparent"
             app:trackStopIndicatorSize="0dp"

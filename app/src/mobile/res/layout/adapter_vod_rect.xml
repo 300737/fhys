@@ -12,14 +12,9 @@
         android:layout_width="match_parent"
         android:layout_height="80dp"
         android:background="@color/black_20"
-        app:shapeAppearanceOverlay="@style/Vod.Grid.Large" />
-
-    <View
-        android:id="@+id/scrim"
-        android:layout_width="match_parent"
-        android:layout_height="64dp"
-        android:layout_alignBottom="@+id/image"
-        android:background="@drawable/card_scrim" />
+        app:shapeAppearanceOverlay="@style/Vod.Grid.Large"
+        app:strokeColor="@color/selector_card_stroke"
+        app:strokeWidth="1.5dp" />
 
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/year"
@@ -47,31 +42,41 @@
         tools:visibility="visible" />
 
     <com.google.android.material.textview.MaterialTextView
-        android:id="@+id/name"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignBottom="@+id/image"
-        android:ellipsize="end"
-        android:paddingStart="8dp"
-        android:paddingEnd="8dp"
-        android:paddingBottom="8dp"
-        android:singleLine="true"
-        android:textColor="@color/white"
-        android:textSize="14sp"
-        tools:text="蜘蛛人" />
-
-    <com.google.android.material.textview.MaterialTextView
         android:id="@+id/remark"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_above="@+id/name"
         android:layout_alignStart="@+id/image"
         android:layout_alignEnd="@+id/image"
-        android:paddingStart="8dp"
-        android:paddingEnd="8dp"
+        android:layout_below="@+id/image"
+        android:ellipsize="end"
+        android:gravity="center"
+        android:paddingStart="6dp"
+        android:paddingEnd="6dp"
+        android:paddingTop="5dp"
         android:singleLine="true"
         android:textColor="@color/white"
         android:textSize="12sp"
         tools:text="更新至24集" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignStart="@+id/image"
+        android:layout_alignEnd="@+id/image"
+        android:layout_below="@+id/remark"
+        android:ellipsize="end"
+        android:gravity="center"
+        android:maxLines="1"
+        android:paddingStart="6dp"
+        android:paddingEnd="6dp"
+        android:paddingTop="3dp"
+        android:paddingBottom="6dp"
+        android:textColor="@color/white"
+        app:autoSizeMaxTextSize="14sp"
+        app:autoSizeMinTextSize="12sp"
+        app:autoSizeStepGranularity="1sp"
+        app:autoSizeTextType="uniform"
+        tools:text="蜘蛛人" />
 
 </RelativeLayout>

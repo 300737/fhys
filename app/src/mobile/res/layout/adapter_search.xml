@@ -13,15 +13,9 @@
         android:layout_width="96dp"
         android:layout_height="match_parent"
         android:background="@color/black_10"
-        app:shapeAppearanceOverlay="@style/Vod.Grid.Large" />
-    <View
-        android:id="@+id/scrim"
-        android:layout_width="match_parent"
-        android:layout_height="64dp"
-        android:layout_alignBottom="@+id/image"
-        android:background="@drawable/card_scrim" />
-
-
+        app:shapeAppearanceOverlay="@style/Vod.Grid.Large"
+        app:strokeColor="@color/selector_card_stroke"
+        app:strokeWidth="1.5dp" />
 
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/site"

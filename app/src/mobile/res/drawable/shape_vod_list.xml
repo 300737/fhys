@@ -1,30 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 选中 / 按下：中性玻璃底 + 薰衣草发光边（绝不填紫，避免色块压住海报） -->
     <item android:state_selected="true">
-        <ripple android:color="#40A855F7">
+        <ripple android:color="#33D9CCFF">
             <item>
                 <layer-list>
                     <item>
                         <shape android:shape="rectangle">
                             <corners android:radius="8dp" />
-                            <solid android:color="#668B5CF6" />
-                        </shape>
-                    </item>
-                    <item>
-                        <shape android:shape="rectangle">
-                            <corners android:radius="8dp" />
-                            <gradient
-                                android:angle="270"
-                                android:startColor="#E68F6BF0"
-                                android:endColor="#E66D28D9" />
+                            <solid android:color="#24FFFFFF" />
                         </shape>
                     </item>
                     <item>
                         <shape android:shape="rectangle">
                             <corners android:radius="8dp" />
                             <stroke
-                                android:width="2dp"
-                                android:color="#E6E0D4FF" />
+                                android:width="1.5dp"
+                                android:color="#D9E0D4FF" />
                         </shape>
                     </item>
                 </layer-list>
@@ -37,26 +30,15 @@
             </item>
         </ripple>
     </item>
+
+    <!-- 常态：极淡中性玻璃底，卡片里只剩海报本身 + 最外圈薰衣草光边 -->
     <item>
-        <ripple android:color="#40A855F7">
+        <ripple android:color="#26D9CCFF">
             <item>
-                <layer-list>
-                    <item>
-                        <shape android:shape="rectangle">
-                            <corners android:radius="8dp" />
-                            <solid android:color="#338B5CF6" />
-                        </shape>
-                    </item>
-                    <item>
-                        <shape android:shape="rectangle">
-                            <corners android:radius="8dp" />
-                            <gradient
-                                android:angle="270"
-                                android:startColor="#E6A78BFA"
-                                android:endColor="#E67C3AED" />
-                        </shape>
-                    </item>
-                </layer-list>
+                <shape android:shape="rectangle">
+                    <corners android:radius="8dp" />
+                    <solid android:color="#12FFFFFF" />
+                </shape>
             </item>
             <item android:id="@android:id/mask">
                 <shape android:shape="rectangle">
@@ -66,4 +48,5 @@
             </item>
         </ripple>
     </item>
+
 </selector>

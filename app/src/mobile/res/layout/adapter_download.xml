@@ -23,15 +23,9 @@
             android:layout_width="50dp"
             android:layout_height="50dp"
             android:layout_marginEnd="12dp"
-            app:shapeAppearanceOverlay="@style/Vod.Grid.Large" />
-    <View
-        android:id="@+id/scrim"
-        android:layout_width="match_parent"
-        android:layout_height="64dp"
-        android:layout_alignBottom="@+id/image"
-        android:background="@drawable/card_scrim" />
-
-
+            app:shapeAppearanceOverlay="@style/Vod.Grid.Large"
+            app:strokeColor="@color/selector_card_stroke"
+            app:strokeWidth="1.5dp" />
 
         <androidx.appcompat.widget.LinearLayoutCompat
             android:layout_width="0dp"
