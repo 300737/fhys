@@ -13,7 +13,9 @@
         android:layout_height="wrap_content"
         android:layout_margin="8dp"
         android:background="@color/black_20"
-        app:shapeAppearanceOverlay="@style/Vod.Circle" />
+        app:shapeAppearanceOverlay="@style/Vod.Circle"
+        app:strokeColor="@color/selector_card_stroke"
+        app:strokeWidth="2dp" />
 
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/name"

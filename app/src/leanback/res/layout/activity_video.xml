@@ -157,7 +157,9 @@
                 android:focusable="false"
                 android:focusableInTouchMode="false"
                 app:shapeAppearanceOverlay="@style/Vod.Grid.Large"
-                tools:src="@drawable/artwork" />
+                tools:src="@drawable/artwork"
+        app:strokeColor="@color/selector_card_stroke"
+        app:strokeWidth="2dp" />
 
             <androidx.appcompat.widget.LinearLayoutCompat
                 android:layout_width="0dp"
