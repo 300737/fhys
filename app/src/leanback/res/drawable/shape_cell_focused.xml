@@ -5,7 +5,7 @@
     <!-- 焦点：与首页分类条一致的纯白底（文字翻黑） -->
     <solid android:color="@color/nf_focus" />
 
-    <corners android:radius="28dp" />
+    <corners android:radius="999dp" />
 
     <padding
         android:bottom="12dp"
