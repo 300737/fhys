@@ -33,8 +33,9 @@
             <androidx.appcompat.widget.LinearLayoutCompat
                 android:id="@+id/render"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="52dp"
                 android:background="@drawable/shape_item"
+        android:gravity="center_vertical"
                 android:orientation="horizontal">
 
                 <com.google.android.material.textview.MaterialTextView
@@ -59,9 +60,10 @@
             <androidx.appcompat.widget.LinearLayoutCompat
                 android:id="@+id/scale"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="52dp"
                 android:layout_marginTop="16dp"
                 android:background="@drawable/shape_item"
+        android:gravity="center_vertical"
                 android:orientation="horizontal">
 
                 <com.google.android.material.textview.MaterialTextView
@@ -86,9 +88,10 @@
             <androidx.appcompat.widget.LinearLayoutCompat
                 android:id="@+id/caption"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="52dp"
                 android:layout_marginTop="16dp"
                 android:background="@drawable/shape_item"
+        android:gravity="center_vertical"
                 android:orientation="horizontal">
 
                 <com.google.android.material.textview.MaterialTextView
@@ -115,9 +118,10 @@
             <androidx.appcompat.widget.LinearLayoutCompat
                 android:id="@+id/buffer"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="52dp"
                 android:layout_marginTop="16dp"
                 android:background="@drawable/shape_item"
+        android:gravity="center_vertical"
                 android:orientation="horizontal">
 
                 <com.google.android.material.textview.MaterialTextView
@@ -151,9 +155,10 @@
             <androidx.appcompat.widget.LinearLayoutCompat
                 android:id="@+id/speed"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="52dp"
                 android:layout_marginTop="16dp"
                 android:background="@drawable/shape_item"
+        android:gravity="center_vertical"
                 android:orientation="horizontal">
 
                 <com.google.android.material.textview.MaterialTextView
@@ -187,9 +192,10 @@
             <androidx.appcompat.widget.LinearLayoutCompat
                 android:id="@+id/tunnel"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="52dp"
                 android:layout_marginTop="16dp"
                 android:background="@drawable/shape_item"
+        android:gravity="center_vertical"
                 android:orientation="horizontal">
 
                 <com.google.android.material.textview.MaterialTextView
@@ -214,9 +220,10 @@
             <androidx.appcompat.widget.LinearLayoutCompat
                 android:id="@+id/audioDecode"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="52dp"
                 android:layout_marginTop="16dp"
                 android:background="@drawable/shape_item"
+        android:gravity="center_vertical"
                 android:orientation="horizontal">
 
                 <com.google.android.material.textview.MaterialTextView
@@ -241,9 +248,10 @@
             <androidx.appcompat.widget.LinearLayoutCompat
                 android:id="@+id/videoDecode"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="52dp"
                 android:layout_marginTop="16dp"
                 android:background="@drawable/shape_item"
+        android:gravity="center_vertical"
                 android:orientation="horizontal">
 
                 <com.google.android.material.textview.MaterialTextView
@@ -268,9 +276,10 @@
             <androidx.appcompat.widget.LinearLayoutCompat
                 android:id="@+id/aac"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="52dp"
                 android:layout_marginTop="16dp"
                 android:background="@drawable/shape_item"
+        android:gravity="center_vertical"
                 android:orientation="horizontal">
 
                 <com.google.android.material.textview.MaterialTextView
@@ -295,9 +304,10 @@
             <androidx.appcompat.widget.LinearLayoutCompat
                 android:id="@+id/adblock"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="52dp"
                 android:layout_marginTop="16dp"
                 android:background="@drawable/shape_item"
+        android:gravity="center_vertical"
                 android:orientation="horizontal">
 
                 <com.google.android.material.textview.MaterialTextView
@@ -322,9 +332,10 @@
             <androidx.appcompat.widget.LinearLayoutCompat
                 android:id="@+id/alwaysProgress"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="52dp"
                 android:layout_marginTop="16dp"
                 android:background="@drawable/shape_item"
+        android:gravity="center_vertical"
                 android:orientation="horizontal">
 
                 <com.google.android.material.textview.MaterialTextView
@@ -349,9 +360,10 @@
             <androidx.appcompat.widget.LinearLayoutCompat
                 android:id="@+id/background"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="52dp"
                 android:layout_marginTop="16dp"
                 android:background="@drawable/shape_item"
+        android:gravity="center_vertical"
                 android:orientation="horizontal">
 
                 <com.google.android.material.textview.MaterialTextView
@@ -376,9 +388,10 @@
             <androidx.appcompat.widget.LinearLayoutCompat
                 android:id="@+id/ua"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="52dp"
                 android:layout_marginTop="16dp"
                 android:background="@drawable/shape_item"
+        android:gravity="center_vertical"
                 android:orientation="horizontal">
 
                 <com.google.android.material.textview.MaterialTextView

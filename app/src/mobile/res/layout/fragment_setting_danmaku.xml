@@ -33,8 +33,9 @@
             <androidx.appcompat.widget.LinearLayoutCompat
                 android:id="@+id/danmakuLoad"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="52dp"
                 android:background="@drawable/shape_item"
+        android:gravity="center_vertical"
                 android:orientation="horizontal">
 
                 <com.google.android.material.textview.MaterialTextView
@@ -59,9 +60,10 @@
             <androidx.appcompat.widget.LinearLayoutCompat
                 android:id="@+id/danmakuApi"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="52dp"
                 android:layout_marginTop="16dp"
                 android:background="@drawable/shape_item"
+        android:gravity="center_vertical"
                 android:orientation="horizontal"
                 android:visibility="gone"
                 tools:visibility="visible">
@@ -90,9 +92,10 @@
             <androidx.appcompat.widget.LinearLayoutCompat
                 android:id="@+id/danmakuAuto"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="52dp"
                 android:layout_marginTop="16dp"
                 android:background="@drawable/shape_item"
+        android:gravity="center_vertical"
                 android:orientation="horizontal"
                 android:visibility="gone"
                 tools:visibility="visible">
@@ -119,9 +122,10 @@
             <androidx.appcompat.widget.LinearLayoutCompat
                 android:id="@+id/danmakuSpider"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="52dp"
                 android:layout_marginTop="16dp"
                 android:background="@drawable/shape_item"
+        android:gravity="center_vertical"
                 android:orientation="horizontal"
                 android:visibility="gone"
                 tools:visibility="visible">

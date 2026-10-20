@@ -1,23 +1,69 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_selected="true">
+        <ripple android:color="#40A855F7">
+            <item>
+                <layer-list>
+                    <item>
+                        <shape android:shape="rectangle">
+                            <corners android:radius="8" />
+                            <solid android:color="#668B5CF6" />
+                        </shape>
+                    </item>
+                    <item>
+                        <shape android:shape="rectangle">
+                            <corners android:radius="8" />
+                            <gradient
+                                android:angle="270"
+                                android:startColor="#E68F6BF0"
+                                android:endColor="#E66D28D9" />
+                        </shape>
+                    </item>
+                    <item>
+                        <shape android:shape="rectangle">
+                            <corners android:radius="8" />
+                            <stroke
+                                android:width="2dp"
+                                android:color="#E6E0D4FF" />
+                        </shape>
+                    </item>
+                </layer-list>
+            </item>
+            <item android:id="@android:id/mask">
+                <shape android:shape="rectangle">
+                    <corners android:radius="8" />
+                    <solid android:color="@color/white" />
+                </shape>
+            </item>
+        </ripple>
+    </item>
     <item>
-        <shape android:shape="rectangle">
-            <gradient
-                android:angle="0"
-                android:centerColor="@color/black_80"
-                android:endColor="@color/black_40"
-                android:startColor="@color/black_90"
-                android:type="linear" />
-        </shape>
+        <ripple android:color="#40A855F7">
+            <item>
+                <layer-list>
+                    <item>
+                        <shape android:shape="rectangle">
+                            <corners android:radius="8" />
+                            <solid android:color="#338B5CF6" />
+                        </shape>
+                    </item>
+                    <item>
+                        <shape android:shape="rectangle">
+                            <corners android:radius="8" />
+                            <gradient
+                                android:angle="270"
+                                android:startColor="#E6A78BFA"
+                                android:endColor="#E67C3AED" />
+                        </shape>
+                    </item>
+                </layer-list>
+            </item>
+            <item android:id="@android:id/mask">
+                <shape android:shape="rectangle">
+                    <corners android:radius="8" />
+                    <solid android:color="@color/white" />
+                </shape>
+            </item>
+        </ripple>
     </item>
-    <item
-        android:left="-2dp"
-        android:top="-2dp"
-        android:bottom="-2dp">
-        <shape android:shape="rectangle">
-            <stroke
-                android:width="1dp"
-                android:color="#B3FFFFFF" />
-        </shape>
-    </item>
-</layer-list>
+</selector>
