@@ -1,7 +1,11 @@
-lxml
-ujson
-pyquery
-requests
-cachetools
-pycryptodome
-beautifulsoup4
+# 版本锁定：CI 的 pip 每次都要连 chaquo.com 解析，源一抖全 job 一起挂。
+# 锁死后配合 build.yml 的 actions/cache（chaquo/build/python），环境命中缓存时
+# pip 全部 "already satisfied"，完全不需要访问 chaquo.com。
+# 版本来源：2026-10-20 run #90 成功构建的实际解析结果（两个 ABI 一致）。
+lxml==5.3.0
+ujson==5.11.0
+pyquery==2.1.0
+requests==2.34.2
+cachetools==7.2.4
+pycryptodome==3.21.0
+beautifulsoup4==4.15.0

@@ -91,6 +91,14 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      # 缓存 Chaquopy 的 Python 环境：requirements 已锁版本，命中缓存后 pip
+      # 全部 "already satisfied"，构建不再依赖 chaquo.com 的可用性（它经常抽风）。
+      - name: Cache Chaquopy Python env
+        uses: actions/cache@v4
+        with:
+          path: chaquo/build/python
+          key: chaquopy-${{ runner.os }}-${{ hashFiles('chaquo/requirements.txt') }}
+
       # 签名密钥不入库，口令也不入库，四个 Secret 分工：
       #   KEYSTORE_BASE64        → tvbox-test.jks          （电视版 leanback 密钥库文件）
       #   MOBILE_KEYSTORE_BASE64 → tiantian_potian.keystore（手机版 mobile 密钥库文件）
