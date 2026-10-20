@@ -20,6 +20,13 @@
         <item name="colorOnSurfaceVariant">@color/nf_text_2</item>
         <item name="colorOutline">@color/nf_card_btn</item>
         <item name="colorOutlineVariant">@color/nf_card_btn</item>
+        <!-- 二级容器槽位：筛选胶囊/次要填充组件全走这里，不给值就是 M3 灰紫 -->
+        <item name="colorSecondaryContainer">@color/nf_accent_soft</item>
+        <item name="colorOnSecondaryContainer">@color/nf_text</item>
+        <item name="colorPrimaryContainer">@color/nf_accent_soft</item>
+        <item name="colorOnPrimaryContainer">@color/nf_text</item>
+        <!-- 图标/控件默认着色（30 处引用），对齐次级文字色 -->
+        <item name="colorControlNormal">@color/nf_text_2</item>
         <!-- 手机版保留自己的沉浸式状态栏/导航栏，不抄 leanback 的全屏窗口 -->
         <item name="android:statusBarColor">@color/transparent</item>
         <item name="android:navigationBarColor">@color/transparent</item>
