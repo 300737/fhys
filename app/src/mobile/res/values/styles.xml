@@ -1,6 +1,26 @@
 <resources>
 
-    <style name="Theme.Base" parent="Theme.Material3.DynamicColors.DayNight.NoActionBar">
+    <style name="Theme.Base" parent="Theme.Material3.Dark.NoActionBar">
+        <!-- 星河霓虹主题：与电视版 leanback 完全一致的全套 M3 颜色覆盖。
+             之前只加了 colors.xml 没接主题，DynamicColors 仍按壁纸取色，等于没换肤。 -->
+        <item name="colorPrimary">@color/nf_accent</item>
+        <item name="colorOnPrimary">@color/nf_on_focus</item>
+        <item name="colorSecondary">@color/nf_activated</item>
+        <!-- 星河霓虹主题底：页面纵向渐变（顶部紫→底部深黑），全部页面生效 -->
+        <item name="android:windowBackground">@drawable/bg_page</item>
+        <!-- M3 surface 系列全量覆盖：弹窗/菜单/底部面板统一紫系 -->
+        <item name="colorSurface">@color/nf_surface</item>
+        <item name="colorSurfaceContainerLowest">#171233</item>
+        <item name="colorSurfaceContainerLow">#1F1947</item>
+        <item name="colorSurfaceContainer">#262057</item>
+        <item name="colorSurfaceContainerHigh">@color/nf_surface</item>
+        <item name="colorSurfaceContainerHighest">@color/nf_card</item>
+        <item name="colorSurfaceVariant">@color/nf_card</item>
+        <item name="colorOnSurface">@color/nf_text</item>
+        <item name="colorOnSurfaceVariant">@color/nf_text_2</item>
+        <item name="colorOutline">@color/nf_card_btn</item>
+        <item name="colorOutlineVariant">@color/nf_card_btn</item>
+        <!-- 手机版保留自己的沉浸式状态栏/导航栏，不抄 leanback 的全屏窗口 -->
         <item name="android:statusBarColor">@color/transparent</item>
         <item name="android:navigationBarColor">@color/transparent</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>

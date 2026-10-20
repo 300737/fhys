@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.text.InputFilter;
-import android.text.TextUtils;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 
@@ -17,8 +16,6 @@ import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.databinding.DialogLinkBinding;
 import com.fongmi.android.tv.ui.activity.VideoActivity;
 import com.fongmi.android.tv.utils.FileChooser;
-import com.fongmi.android.tv.utils.Sniffer;
-import com.fongmi.android.tv.utils.Util;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 public class LinkDialog extends BaseAlertDialog {
@@ -41,9 +38,9 @@ public class LinkDialog extends BaseAlertDialog {
 
     @Override
     protected void initView() {
-        CharSequence text = Util.getClipText();
+        // 彻底不读系统剪贴板：原版会把剪贴板内容（Sniffer 提取后）自动填进输入框，
+        // 复制的任何隐私内容一打开就暴露在框里。现在打开一律空白，要填什么用户自己粘贴。
         binding.text.setFilters(new InputFilter[]{new InputFilter.LengthFilter(Integer.MAX_VALUE)});
-        if (!TextUtils.isEmpty(text)) binding.text.setText(Sniffer.getUrl(text.toString()));
     }
 
     @Override

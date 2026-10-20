@@ -244,6 +244,7 @@
 
                         <androidx.appcompat.widget.AppCompatEditText
                             android:id="@+id/port_search"
+                            android:importantForAutofill="no"
                             android:layout_width="0dp"
                             android:layout_height="match_parent"
                             android:layout_weight="1"

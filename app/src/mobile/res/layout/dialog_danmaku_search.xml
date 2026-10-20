@@ -17,13 +17,15 @@
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/keyword"
+            android:importantForAutofill="no"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:background="@drawable/shape_danmaku_search_keyword"
             android:hint="@string/search_keyword"
             android:imeOptions="actionSearch"
-            android:inputType="textCapWords|textAutoCorrect|textAutoComplete"
+            android:inputType="textCapWords|textAutoCorrect"
+            android:text=""
             android:maxLength="255"
             android:singleLine="true"
             android:textSize="14sp" />

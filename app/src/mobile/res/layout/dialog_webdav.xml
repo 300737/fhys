@@ -27,7 +27,9 @@
             android:hint="@string/sync_url"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
             <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/url"
+                android:text=""
+            android:id="@+id/url"
+            android:importantForAutofill="no"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="textUri"
@@ -42,7 +44,9 @@
             android:hint="@string/sync_user"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
             <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/user"
+                android:text=""
+            android:id="@+id/user"
+            android:importantForAutofill="no"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="text"
@@ -58,7 +62,9 @@
             app:passwordToggleEnabled="true"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
             <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/pass"
+                android:text=""
+            android:id="@+id/pass"
+            android:importantForAutofill="no"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="textPassword"

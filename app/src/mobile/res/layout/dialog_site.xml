@@ -23,6 +23,8 @@
             android:layout_width="0dp"
             android:layout_height="40dp"
             android:layout_weight="1"
+            android:text=""
+            android:importantForAutofill="no"
             android:background="@drawable/shape_search_dialog"
             android:textColor="@color/white"
             android:textSize="14sp"

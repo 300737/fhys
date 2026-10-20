@@ -45,7 +45,7 @@ public class UaDialog extends BaseAlertDialog {
         // 打开一律空白：原版会把存档值回填进输入框，脏值就永远躺在框里。
         // 干净的旧值只放 hint 展示，不进正文。
         binding.text.setText("");
-        binding.text.setHint(TextUtils.isEmpty(text) ? "UA" : text);
+        binding.text.setHint("UA");
     }
 
     @Override
