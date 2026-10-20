@@ -6,12 +6,25 @@ import java.text.SimpleDateFormat
 
 def localProps = new Properties()
 def localPropsFile = rootProject.file('local.properties')
-// local.properties 含本机 SDK 路径与签名密钥，不入库；
-// CI 环境没有该文件，此处必须容错，缺失时签名等配置走下方 `?:` 默认值兜底。
+// local.properties 含本机 SDK 路径与签名密钥，不入库（.gitignore 已排除）。
+// CI 环境没有该文件，签名口令改由仓库 Secrets 经环境变量注入，见 .github/workflows/build.yml。
 if (localPropsFile.exists()) {
     localPropsFile.withInputStream {
         localProps.load(it)
     }
+}
+
+// 签名口令解析：local.properties 优先，其次环境变量（CI 用），两者都缺直接报错。
+// 严禁在源码里硬编码口令兜底——2026-10 轮换口令的教训：兜底值曾被当作真实口令写进
+// 构建脚本并推上远端，仓库一旦公开即等于公开签名口令。口令只进 local.properties / Secrets。
+def resolveSigningSecret = { String propKey, String envKey ->
+    def v = localProps[propKey] ?: System.getenv(envKey)
+    if (v == null || v.toString().trim().isEmpty()) {
+        throw new GradleException(
+            "缺少签名口令：请在 local.properties 中配置 ${propKey}，" +
+            "或在环境变量 ${envKey} 中提供（CI 请在仓库 Settings → Secrets 添加同名 Secret）。")
+    }
+    return v.toString()
 }
 
 // 版本号单一事实来源：只在这里维护 VERSION_CODE，versionName 由它拼出，
@@ -63,16 +76,17 @@ android {
         mobile {
             storeFile rootProject.file(localProps['mobileStoreFile'] ?: 'tiantian_potian.keystore')
             keyAlias localProps['mobileKeyAlias'] ?: 'potian'
-            storePassword localProps['mobileStorePassword'] ?: 'potian123'
-            // 修：原先这里误读 storePassword，导致 keyPassword 与 storePassword 一旦不同就签名失败。
-            keyPassword localProps['mobileKeyPassword'] ?: localProps['mobileStorePassword'] ?: 'potian123'
+            storePassword resolveSigningSecret('mobileStorePassword', 'MOBILE_STORE_PASSWORD')
+            // PKCS12/JKS 的 keyPassword 与 storePassword 相同；本地如需分开配置，
+            // 在 local.properties 写 mobileKeyPassword 即可覆盖。
+            keyPassword localProps['mobileKeyPassword'] ?: resolveSigningSecret('mobileStorePassword', 'MOBILE_STORE_PASSWORD')
         }
         // 电视版（leanback flavor）签名
         tv {
             storeFile rootProject.file(localProps['tvStoreFile'] ?: localProps['storeFile'] ?: 'tvbox-test.jks')
             keyAlias localProps['tvKeyAlias'] ?: localProps['keyAlias'] ?: 'tvbox'
-            storePassword localProps['tvStorePassword'] ?: localProps['storePassword'] ?: 'tvbox123'
-            keyPassword localProps['tvKeyPassword'] ?: localProps['keyPassword'] ?: localProps['storePassword'] ?: 'tvbox123'
+            storePassword resolveSigningSecret('tvStorePassword', 'TV_STORE_PASSWORD')
+            keyPassword localProps['tvKeyPassword'] ?: localProps['storePassword'] ?: resolveSigningSecret('tvStorePassword', 'TV_STORE_PASSWORD')
         }
     }
 

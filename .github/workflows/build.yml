@@ -87,10 +87,12 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      # 签名密钥不入库，两个 Secret 各管一版：
-      #   KEYSTORE_BASE64        → tvbox-test.jks          （电视版 leanback）
-      #   MOBILE_KEYSTORE_BASE64 → tiantian_potian.keystore（手机版 mobile）
-      # 只出正式版 Release 包；某个 Secret 缺失时直接失败，不再退化为 Debug 测试包。
+      # 签名密钥不入库，口令也不入库，四个 Secret 分工：
+      #   KEYSTORE_BASE64        → tvbox-test.jks          （电视版 leanback 密钥库文件）
+      #   MOBILE_KEYSTORE_BASE64 → tiantian_potian.keystore（手机版 mobile 密钥库文件）
+      #   TV_STORE_PASSWORD      → tvbox-test.jks 的签名口令
+      #   MOBILE_STORE_PASSWORD  → tiantian_potian.keystore 的签名口令
+      # 只出正式版 Release 包；Secret 缺失时直接失败，不再退化为 Debug 测试包。
       - name: Restore signing keys
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
@@ -129,17 +131,28 @@ jobs:
 
       - name: Build ${{ matrix.target }}
         if: steps.pick.outputs.run == 'true'
+        env:
+          TV_STORE_PASSWORD: ${{ secrets.TV_STORE_PASSWORD }}
+          MOBILE_STORE_PASSWORD: ${{ secrets.MOBILE_STORE_PASSWORD }}
         run: |
           if [ "${{ matrix.flavor }}" = "leanback" ]; then
             signed=$has_tv_key
             secret_name=KEYSTORE_BASE64
+            pw="$TV_STORE_PASSWORD"
+            pw_name=TV_STORE_PASSWORD
           else
             signed=$has_mobile_key
             secret_name=MOBILE_KEYSTORE_BASE64
+            pw="$MOBILE_STORE_PASSWORD"
+            pw_name=MOBILE_STORE_PASSWORD
           fi
           # 只出 Release；没有签名就不出包，避免混进 Debug 测试包
           if [ "$signed" != "true" ]; then
             echo "::error::缺少 $secret_name，${{ matrix.target }} 无法签名 Release 包"
+            exit 1
+          fi
+          if [ -z "$pw" ]; then
+            echo "::error::缺少签名口令 Secret $pw_name，${{ matrix.target }} 无法签名 Release 包"
             exit 1
           fi
           ./gradlew :app:assemble${{ matrix.target }}Release --no-daemon --stacktrace
