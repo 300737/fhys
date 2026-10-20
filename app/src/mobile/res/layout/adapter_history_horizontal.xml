@@ -15,7 +15,7 @@
         android:background="@color/black_20"
         app:shapeAppearanceOverlay="@style/Vod.Grid.Large"
         app:strokeColor="@color/selector_card_stroke"
-        app:strokeWidth="1.5dp" />
+        app:strokeWidth="2dp" />
 
     <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/delete"

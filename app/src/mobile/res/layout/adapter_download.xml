@@ -25,7 +25,7 @@
             android:layout_marginEnd="12dp"
             app:shapeAppearanceOverlay="@style/Vod.Grid.Large"
             app:strokeColor="@color/selector_card_stroke"
-            app:strokeWidth="1.5dp" />
+            app:strokeWidth="2dp" />
 
         <androidx.appcompat.widget.LinearLayoutCompat
             android:layout_width="0dp"

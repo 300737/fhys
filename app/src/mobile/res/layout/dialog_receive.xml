@@ -18,7 +18,7 @@
             android:layout_height="120dp"
             android:background="@color/black_10"
             app:shapeAppearanceOverlay="@style/Vod.Grid.Large"         app:strokeColor="@color/selector_card_stroke"
-        app:strokeWidth="1.5dp" />
+        app:strokeWidth="2dp" />
 
         <include
             android:id="@+id/progress"
