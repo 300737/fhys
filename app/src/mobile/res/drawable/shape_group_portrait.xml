@@ -6,13 +6,13 @@
                 <layer-list>
                     <item>
                         <shape android:shape="rectangle">
-                            <corners android:radius="8" />
+                            <corners android:radius="8dp" />
                             <solid android:color="#668B5CF6" />
                         </shape>
                     </item>
                     <item>
                         <shape android:shape="rectangle">
-                            <corners android:radius="8" />
+                            <corners android:radius="8dp" />
                             <gradient
                                 android:angle="270"
                                 android:startColor="#E68F6BF0"
@@ -21,7 +21,7 @@
                     </item>
                     <item>
                         <shape android:shape="rectangle">
-                            <corners android:radius="8" />
+                            <corners android:radius="8dp" />
                             <stroke
                                 android:width="2dp"
                                 android:color="#E6E0D4FF" />
@@ -31,7 +31,7 @@
             </item>
             <item android:id="@android:id/mask">
                 <shape android:shape="rectangle">
-                    <corners android:radius="8" />
+                    <corners android:radius="8dp" />
                     <solid android:color="@color/white" />
                 </shape>
             </item>
@@ -43,13 +43,13 @@
                 <layer-list>
                     <item>
                         <shape android:shape="rectangle">
-                            <corners android:radius="8" />
+                            <corners android:radius="8dp" />
                             <solid android:color="#338B5CF6" />
                         </shape>
                     </item>
                     <item>
                         <shape android:shape="rectangle">
-                            <corners android:radius="8" />
+                            <corners android:radius="8dp" />
                             <gradient
                                 android:angle="270"
                                 android:startColor="#E6A78BFA"
@@ -60,7 +60,7 @@
             </item>
             <item android:id="@android:id/mask">
                 <shape android:shape="rectangle">
-                    <corners android:radius="8" />
+                    <corners android:radius="8dp" />
                     <solid android:color="@color/white" />
                 </shape>
             </item>
