@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- ===== 星河霓虹主题（与电视版 leanback 完全一致，手机版同步套用） ===== -->
+
+    <!-- 覆盖 main 的共享中性色：页面底 / 遮罩，纯黑改为紫调底 -->
+    <color name="black">#1A1240</color>
+    <color name="black_20">#332A1B66</color>
+    <color name="black_40">#662A1B66</color>
+    <color name="black_50">#802A1B66</color>
+    <color name="black_60">#992A1B66</color>
+    <color name="black_70">#B32A1B66</color>
+    <color name="black_80">#CC2A1B66</color>
+    <color name="black_90">#E62A1B66</color>
+    <color name="grey_800">#1A1240</color>
+    <!-- 播放器全屏专用纯黑：点播/直播/投播画面底色（black 已被主题重定义为紫调底） -->
+    <color name="player_black">#000000</color>
+
+    <!-- 基础语义色 -->
+    <color name="nf_bg">#1A1240</color>            <!-- 保留；页面实际用 bg_page 渐变 -->
+    <color name="nf_surface">#2E2566</color>       <!-- 面板 / 播放器控制条 -->
+    <color name="nf_card">#3D3088</color>          <!-- 控件常态（替代 white_10）——满屏卡片主色 -->
+    <color name="nf_card_btn">#4A3D9E</color>      <!-- 按钮常态描边（替代 white_30） -->
+    <color name="nf_focus">#5EE7FF</color>         <!-- 聚焦实色底：亮青，配深字 -->
+    <color name="nf_on_focus">#0B1520</color>      <!-- 聚焦实色底上的深色文字 -->
+    <color name="nf_focus_stroke">#5EE7FF</color>  <!-- 聚焦描边 -->
+    <color name="nf_activated">#9A8BFF</color>     <!-- 选中 / 激活：亮紫 -->
+    <color name="nf_accent">#7C6BFF</color>        <!-- 强调紫 -->
+    <color name="nf_accent_soft">#2C2557</color>   <!-- 强调弱底 -->
+    <color name="nf_action">#FF6B8B</color>        <!-- 主行动按钮：粉红 -->
+    <color name="nf_gold">#FFC861</color>          <!-- 点缀金 -->
+    <color name="nf_text">#F0EEFA</color>          <!-- 主文字 -->
+    <color name="nf_text_2">#A9A4C9</color>        <!-- 次级文字 -->
+    <color name="nf_text_3">#7C77A0</color>        <!-- 弱化文字 -->
+
+    <!-- 内容标签 -->
+    <color name="nf_label_year">#5EE7FF</color>
+    <color name="nf_label_site">#FF6B8B</color>
+    <color name="nf_label_remark">#3FBF8F</color>
+
+    <!-- 设置页 -->
+    <color name="setting_accent">#7C6BFF</color>
+    <color name="cell_bg">#D9231E45</color>
+    <color name="cell_focus">#FF2E4A6B</color>
+    <color name="cell_label">#8FD97A</color>
+    <color name="cell_value">#F5CF6B</color>
+    <color name="setting_card">#2A2158</color>
+    <color name="setting_card_focus">#3D3088</color>
+    <color name="setting_group">#A9A4C9</color>
+    <color name="setting_value">#B7B2D4</color>
+
+</resources>

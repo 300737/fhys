@@ -5,21 +5,19 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <com.google.android.material.progressindicator.CircularProgressIndicator
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:indeterminate="true"
-        app:indicatorColor="@color/white" />
+    <com.fongmi.android.tv.ui.custom.TaijiSpinnerView
+        android:layout_width="88dp"
+        android:layout_height="88dp"
+        android:layout_gravity="center" />
 
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/traffic"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:layout_marginTop="40dp"
+        android:layout_marginTop="60dp"
         android:textColor="@color/white"
-        android:textSize="12sp"
+        android:textSize="16sp"
         android:visibility="gone"
         tools:text="120 KB/s"
         tools:visibility="visible" />
