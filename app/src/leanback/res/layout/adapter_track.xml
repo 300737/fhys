@@ -9,6 +9,6 @@
     android:focusable="true"
     android:focusableInTouchMode="true"
     android:singleLine="true"
-    android:textColor="@color/text"
+    android:textColor="@color/white"
     android:textSize="14sp"
     tools:text="中文、哥斯拉.srt" />
