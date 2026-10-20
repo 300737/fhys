@@ -73,7 +73,31 @@ if [ "$CONC" != "success" ]; then
   echo "改用构建: $RUN"
 fi
 
-# ---------- 2. 找匹配的产物 ----------
+# ---------- 2. 优先走 release 直链（免 token，CF 加速） ----------
+# CI 的 publish job 会把 4 个包发布到滚动 tag `latest`，公开仓库免 token 可下。
+REL_NAME="fhys-$FLAVOR-$ABI.apk"
+if [ -n "$ACCEL" ]; then
+  REL_URL="$ACCEL/https://github.com/$REPO/releases/download/latest/$REL_NAME"
+else
+  REL_URL="https://github.com/$REPO/releases/download/latest/$REL_NAME"
+fi
+echo "CF 直链: $REL_URL"
+ok=0
+for i in $(seq 1 12); do
+  if curl -g -s -k -f -m 900 -o "$OUT/$REL_NAME" "$REL_URL" && [ -s "$OUT/$REL_NAME" ]; then
+    ok=1; break
+  fi
+  echo "  发布 job 可能还没跑完，5 秒后重试… ($i/12)"
+  sleep 5
+done
+if [ "$ok" = "1" ]; then
+  echo
+  echo "下载完成: $OUT/$REL_NAME"
+  exit 0
+fi
+echo "release 直链暂不可用，回退 artifact 流程。"
+
+# ---------- 3. 找匹配的产物 ----------
 ART=$(api "$API/actions/runs/$RUN/artifacts" | python -c "
 import json,sys
 want='$WANT'.lower()
@@ -93,7 +117,7 @@ if [ -z "$ART_ID" ]; then
 fi
 echo "产物: $ART_NAME ($ART_ID)"
 
-# ---------- 3. 两步下载（反代会转发 Authorization，第二步必须不带 token）----------
+# ---------- 4. 两步下载（反代会转发 Authorization，第二步必须不带 token）----------
 ZIP_URL="$API/actions/artifacts/$ART_ID/zip"
 if [ -z "$ACCEL" ]; then ZIP_URL="https://api.github.com/repos/$REPO/actions/artifacts/$ART_ID/zip"; fi
 
@@ -111,7 +135,7 @@ curl -g -s -k -L --max-time 900 -o "$ZIP" \
   -w "下载完成: %{size_download} 字节, 用时 %{time_total}s, 均速 %{speed_download} B/s\n" "$LOC"
 [ -s "$ZIP" ] || { echo "下载失败，文件是空的。"; exit 1; }
 
-# ---------- 4. 解出 APK 到桌面 ----------
+# ---------- 5. 解出 APK 到桌面 ----------
 TMPOUT="$(mktemp -d)"
 unzip -q -o "$ZIP" -d "$TMPOUT"
 APK=$(find "$TMPOUT" -name "*.apk" | head -1)

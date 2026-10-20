@@ -25,6 +25,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# publish job 要建 Release（rolling tag: latest）
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Build ${{ matrix.target }}
@@ -167,30 +171,97 @@ jobs:
             app/build/outputs/apk/**/*.apk
           if-no-files-found: error
           retention-days: 30
+      # 下载链接统一由末尾的 publish job 生成：Release 资产 + CF 反代直链，
+      # 点开即下、无需 token。这里不再打印任何需要手拼的地址。
 
-      # 产物下载走自建 CF 反代加速，比裸连 GitHub 快得多
-      - name: Publish CDN download link
-        if: steps.pick.outputs.run == 'true'
+  # 全部包构建成功后，汇总发布到滚动 tag `latest` 的 Release。
+  # 公开仓库的 release 资产免 token 即可下载，套 CF 反代就是点开即下的高速直链
+  # （实测反代会连资产 302 一起收束到高速节点，不会漏回 Azure 裸连）。
+  publish:
+    name: Publish release
+    needs: build
+    if: ${{ needs.build.result == 'success' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve flavors
+        id: pick
+        run: |
+          input="${{ github.event.inputs.flavors }}"
+          if [ -z "$input" ] || [ "$input" = "all" ]; then
+            echo "flavors=leanback,mobile" >> "$GITHUB_OUTPUT"
+          else
+            echo "flavors=$input" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download all APK artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Collect APKs
+        run: |
+          mkdir -p dist
+          count=0
+          for d in artifacts/apk-*; do
+            [ -d "$d" ] || continue
+            base=$(basename "$d")                    # apk-leanback-arm64-v8a-release
+            key=${base#apk-}; key=${key%-release}     # leanback-arm64-v8a
+            flavor=${key%%-*}
+            case ",${{ steps.pick.outputs.flavors }}," in
+              *",$flavor,"*) ;;
+              *) echo "::error::非预期产物 $base（本次只构建 ${{ steps.pick.outputs.flavors }}）"; exit 1 ;;
+            esac
+            apk=$(find "$d" -name '*.apk' | head -1)
+            if [ -z "$apk" ]; then
+              echo "::error::$base 里没有 apk"; exit 1
+            fi
+            cp "$apk" "dist/fhys-$key.apk"
+            count=$((count+1))
+          done
+          want=$(( $(echo "${{ steps.pick.outputs.flavors }}" | tr ',' '\n' | wc -l) * 2 ))
+          if [ "$count" -ne "$want" ]; then
+            echo "::error::预期 $want 个包，实际 $count 个"; exit 1
+          fi
+          ls -lh dist/
+
+      - name: Create or update release
         env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: latest
           CF_PROXY: https://cf.612526.xyz
         run: |
+          REPO="${{ github.repository }}"
+          TITLE="最新构建 · run #${{ github.run_number }} · ${GITHUB_SHA::7}"
+          DL="$CF_PROXY/${{ github.server_url }}/$REPO/releases/download/$TAG"
+          NOTES="run #${{ github.run_number }} · commit ${GITHUB_SHA::7}
+
+          $(for f in dist/*.apk; do n=$(basename "$f"); echo "- $n — $DL/$n"; done)"
+          if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/*.apk --repo "$REPO" --clobber
+            gh release edit "$TAG" --repo "$REPO" --title "$TITLE" --notes "$NOTES"
+          else
+            gh release create "$TAG" dist/*.apk --repo "$REPO" --title "$TITLE" --notes "$NOTES"
+          fi
+          # tag 挪到本次提交，保证 release 页面显示的 commit 与实际一致
+          gh api --method PATCH "/repos/$REPO/git/refs/tags/$TAG" \
+            -f sha="$GITHUB_SHA" -F force=true >/dev/null 2>&1 \
+            || echo "tag 移动失败（不影响 assets 下载）"
+
+      - name: Publish download links
+        env:
+          CF_PROXY: https://cf.612526.xyz
+          TAG: latest
+        run: |
+          BASE="$CF_PROXY/${{ github.server_url }}/${{ github.repository }}/releases/download/$TAG"
           {
-            echo "### ${{ matrix.target }} 下载"
+            echo "## 📦 下载（CF 高速直链 · 点开即下 · 无需 token）"
             echo ""
-            echo "GitHub 直连慢的话，用自建反代 **$CF_PROXY**（会转发认证头，所以两步下载，第二步别带 token）："
+            for f in dist/*.apk; do
+              n=$(basename "$f")
+              echo "- **$n**（$(du -h "$f" | cut -f1)）→ [立即下载]($BASE/$n)"
+            done
             echo ""
-            echo '```bash'
-            echo "TOKEN=<你的 GitHub token>"
-            echo "LOC=\$(curl -s -k -D - -o /dev/null -H \"Authorization: token \$TOKEN\" \\"
-            echo "  \"$CF_PROXY/https://api.github.com/repos/${{ github.repository }}/actions/artifacts/<artifact_id>/zip\" \\"
-            echo "  | grep -i '^location:' | cut -d' ' -f2 | tr -d '\r\n\t ')"
-            echo 'case "$LOC" in http*) ;; *) LOC="'$CF_PROXY'$LOC" ;; esac   # 反代返回相对路径，要补成绝对地址'
-            echo "curl -g -k -L -o apk.zip \"\$LOC\""
-            echo '```'
+            echo "也可用仓库自带脚本自动等构建并下载：\`bash tools/fetch-apk.sh <flavor> <abi>\`"
             echo ""
-            echo "偷懒版：仓库里已带 \`tools/fetch-apk.sh\`，一条命令自动找最新构建并落桌面："
-            echo ""
-            echo '```bash'
-            echo "bash tools/fetch-apk.sh ${{ matrix.flavor }} ${{ matrix.abi }}"
-            echo '```'
+            echo "构建记录：${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           } >> "$GITHUB_STEP_SUMMARY"
