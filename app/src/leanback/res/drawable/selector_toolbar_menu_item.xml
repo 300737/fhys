@@ -3,18 +3,18 @@
     <item android:state_focused="true">
         <shape android:shape="rectangle">
             <solid android:color="@color/white_15" />
-            <corners android:radius="20dp" />
+            <corners android:radius="28dp" />
         </shape>
     </item>
     <item android:state_pressed="true">
         <shape android:shape="rectangle">
             <solid android:color="@color/white_15" />
-            <corners android:radius="20dp" />
+            <corners android:radius="28dp" />
         </shape>
     </item>
     <item>
         <shape android:shape="rectangle">
-            <corners android:radius="20dp" />
+            <corners android:radius="28dp" />
             <solid android:color="#E0DDEA" />
         </shape>
     </item>
@@ -24,7 +24,7 @@
         android:right="4dp"
         android:top="4dp">
         <shape android:shape="rectangle">
-            <corners android:radius="16dp" />
+            <corners android:radius="24dp" />
             <gradient
                 android:angle="270"
                 android:startColor="#E69B68F0"
