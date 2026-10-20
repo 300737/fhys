@@ -7,7 +7,7 @@
                     <item>
                         <shape android:shape="rectangle">
                             <corners android:radius="28dp" />
-                            <solid android:color="#666D28D9" />
+                            <solid android:color="#668B5CF6" />
                         </shape>
                     </item>
                     <item>
@@ -15,25 +15,16 @@
                             <corners android:radius="28dp" />
                             <gradient
                                 android:angle="270"
-                                android:startColor="#E69061F9"
+                                android:startColor="#E68F6BF0"
                                 android:endColor="#E66D28D9" />
                         </shape>
                     </item>
-                    <item
-                        android:bottom="24dp"
-                        android:left="10dp"
-                        android:right="10dp"
-                        android:top="2dp">
+                    <item>
                         <shape android:shape="rectangle">
-                            <corners
-                                android:bottomLeftRadius="0dp"
-                                android:bottomRightRadius="0dp"
-                                android:topLeftRadius="18dp"
-                                android:topRightRadius="18dp" />
-                            <gradient
-                                android:angle="270"
-                                android:startColor="#B3FFFFFF"
-                                android:endColor="#00FFFFFF" />
+                            <corners android:radius="28dp" />
+                            <stroke
+                                android:width="2dp"
+                                android:color="#E6E0D4FF" />
                         </shape>
                     </item>
                 </layer-list>
@@ -47,7 +38,7 @@
         </ripple>
     </item>
     <item>
-        <ripple android:color="#26A855F7">
+        <ripple android:color="#33A855F7">
             <item>
                 <layer-list>
                     <item>
@@ -61,8 +52,8 @@
                             <corners android:radius="28dp" />
                             <gradient
                                 android:angle="270"
-                                android:startColor="#DBA78BFA"
-                                android:endColor="#D9826FE8" />
+                                android:startColor="#E6A78BFA"
+                                android:endColor="#E67C3AED" />
                         </shape>
                     </item>
                     <item
@@ -72,13 +63,11 @@
                         android:top="2dp">
                         <shape android:shape="rectangle">
                             <corners
-                                android:bottomLeftRadius="0dp"
-                                android:bottomRightRadius="0dp"
                                 android:topLeftRadius="18dp"
                                 android:topRightRadius="18dp" />
                             <gradient
                                 android:angle="270"
-                                android:startColor="#99FFFFFF"
+                                android:startColor="#59FFFFFF"
                                 android:endColor="#00FFFFFF" />
                         </shape>
                     </item>

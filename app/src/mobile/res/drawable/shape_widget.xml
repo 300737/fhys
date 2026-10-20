@@ -4,10 +4,6 @@
 
     <solid android:color="@color/black_50" />
 
-    <stroke
-        android:width="1.5dp"
-        android:color="@color/nf_focus_stroke" />
-
     <corners android:radius="28dp" />
 
     <padding
