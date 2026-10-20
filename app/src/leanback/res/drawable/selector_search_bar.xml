@@ -2,20 +2,33 @@
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:state_focused="true">
         <shape android:shape="rectangle">
-            <solid android:color="@color/nf_card_btn" />
+            <solid android:color="@color/white_15" />
             <corners android:radius="20dp" />
+            <stroke
+                android:width="1.5dp"
+                android:color="@color/nf_focus" />
         </shape>
     </item>
     <item android:state_pressed="true">
         <shape android:shape="rectangle">
-            <solid android:color="@color/nf_card_btn" />
+            <solid android:color="@color/white_15" />
             <corners android:radius="20dp" />
+            <stroke
+                android:width="1.5dp"
+                android:color="@color/nf_focus" />
         </shape>
     </item>
     <item>
         <shape android:shape="rectangle">
-            <solid android:color="@color/nf_card" />
             <corners android:radius="20dp" />
+            <gradient
+        android:angle="270"
+        android:startColor="#E69F6BF2"
+        android:endColor="#E67C3AED" />
+
+            <stroke
+        android:width="1.5dp"
+        android:color="#CCD9CCFF" />
         </shape>
     </item>
 </selector>
