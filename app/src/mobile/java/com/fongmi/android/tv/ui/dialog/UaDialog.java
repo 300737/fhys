@@ -36,8 +36,16 @@ public class UaDialog extends BaseAlertDialog {
     @Override
     protected void initView() {
         String text = Setting.getUa();
-        binding.text.setText(text);
-        binding.text.setSelection(TextUtils.isEmpty(text) ? 0 : text.length());
+        // 误存过的脏值（含中文 / 超 300 字，比如把聊天内容粘进来过）直接清掉：
+        // 这种值换源码、清缓存、重装都消不掉，只能在这里主动清。
+        if (!TextUtils.isEmpty(text) && (text.length() > 300 || text.matches(".*[\\u4e00-\\u9fa5].*"))) {
+            Setting.putUa("");
+            text = "";
+        }
+        // 打开一律空白：原版会把存档值回填进输入框，脏值就永远躺在框里。
+        // 干净的旧值只放 hint 展示，不进正文。
+        binding.text.setText("");
+        binding.text.setHint(TextUtils.isEmpty(text) ? "UA" : text);
     }
 
     @Override
@@ -69,7 +77,11 @@ public class UaDialog extends BaseAlertDialog {
     }
 
     private void onPositive(DialogInterface dialog, int which) {
-        ((UaListener) requireParentFragment()).setUa(binding.text.getText().toString().trim());
+        String v = binding.text.getText().toString().trim();
+        // 打开即空白的设计下，没打字直接点确定 = 保持原值，防止误清正常 UA。
+        // 真正的脏值由 initView 的自动清理兜底，不需要用户手动删。
+        if (v.isEmpty()) v = Setting.getUa();
+        ((UaListener) requireParentFragment()).setUa(v);
         dismiss();
     }
 }
