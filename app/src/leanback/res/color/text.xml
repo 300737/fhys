@@ -1,13 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-    通用条目文字色（14 个 adapter 共用）。两种聚焦背景并存：
-    ① 实色青底聚焦（selector_item / selector_chip）→ 聚焦+选中时深字
-    ② 描边式聚焦（selector_chip_round 等）→ 聚焦时亮青字
--->
+<!-- 通用条目文字色（14 个 adapter 共用）：聚焦 / 选中 / 勾选一律亮白 #FFFFFF -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:color="@color/nf_on_focus" android:state_focused="true" android:state_selected="true" />
-    <item android:color="@color/nf_focus" android:state_focused="true" />
-    <item android:color="@color/nf_text" android:state_selected="true" />
-    <item android:color="@color/nf_focus" android:state_checked="true" />
+    <item android:color="@color/white" android:state_focused="true" android:state_selected="true" />
+    <item android:color="@color/white" android:state_focused="true" />
+    <item android:color="@color/white" android:state_selected="true" />
+    <item android:color="@color/white" android:state_checked="true" />
     <item android:color="@color/nf_text" />
 </selector>
