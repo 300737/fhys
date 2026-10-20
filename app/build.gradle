@@ -61,10 +61,6 @@ android {
         // 本工程用 flavorDimensions="abi" 按架构拆包，架构限定必须留在 productFlavors 里
         // （arm64_v8a flavor 只留 arm64-v8a）。若在 defaultConfig 放宽成两个架构，
         // 变体 armeabi_v7a 会把两套 so 都打进去，包从 103MB 涨到 141MB。
-        // 资源瘦身：只保留中文资源。媒体库/AppCompat/Material 自带几十种语言，
-        // 对纯中文用户是纯浪费，裁掉后 resources.arsc 与 res/ 明显变小。
-        resourceConfigurations += ["zh"]
-
         javaCompileOptions {
             annotationProcessorOptions {
                 arguments = ["room.schemaLocation": "$projectDir/schemas".toString(), "eventBusIndex": "com.fongmi.android.tv.event.EventIndex"]
