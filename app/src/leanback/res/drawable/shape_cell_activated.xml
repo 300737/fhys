@@ -5,7 +5,7 @@
     <!-- 选中/激活：与首页分类条一致的灰白底 -->
     <solid android:color="@color/nf_activated" />
 
-    <corners android:radius="28dp" />
+    <corners android:radius="8dp" />
 
     <padding
         android:bottom="12dp"

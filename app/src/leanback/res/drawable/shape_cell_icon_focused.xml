@@ -5,6 +5,6 @@
     <!-- 图标格焦点：半透明白底，与首页工具栏按钮一致 -->
     <solid android:color="@color/nf_card_btn" />
 
-    <corners android:radius="14dp" />
+    <corners android:radius="8dp" />
 
 </shape>

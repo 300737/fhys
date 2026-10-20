@@ -26,9 +26,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="80dp"
                 android:background="@color/black_20"
-                android:scaleType="centerCrop"         app:shapeAppearanceOverlay="@style/Vod.Grid.Large"
-        app:strokeColor="@color/selector_card_stroke"
-        app:strokeWidth="2dp" />
+                android:scaleType="centerCrop" />
 
             <!-- Dark gradient shadow overlay at the bottom -->
             <View
