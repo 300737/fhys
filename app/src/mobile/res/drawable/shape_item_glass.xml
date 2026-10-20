@@ -10,36 +10,29 @@
                             <solid android:color="#666D28D9" />
                         </shape>
                     </item>
-                    <item
-                        android:bottom="1.5dp"
-                        android:left="1.5dp"
-                        android:right="1.5dp"
-                        android:top="1.5dp">
+                    <item>
                         <shape android:shape="rectangle">
-                            <corners android:radius="27dp" />
+                            <corners android:radius="28dp" />
                             <gradient
                                 android:angle="270"
-                                android:startColor="#D9C4A8FF"
-                                android:endColor="#E66D28D9" />
-                            <stroke
-                                android:width="1.5dp"
-                                android:color="#CCE0D4FF" />
+                                android:startColor="#E0C4A8FF"
+                                android:endColor="#E67C4FE0" />
                         </shape>
                     </item>
                     <item
-                        android:bottom="20dp"
-                        android:left="8dp"
-                        android:right="8dp"
-                        android:top="3dp">
+                        android:bottom="24dp"
+                        android:left="10dp"
+                        android:right="10dp"
+                        android:top="2dp">
                         <shape android:shape="rectangle">
                             <corners
                                 android:bottomLeftRadius="0dp"
                                 android:bottomRightRadius="0dp"
-                                android:topLeftRadius="16dp"
-                                android:topRightRadius="16dp" />
+                                android:topLeftRadius="18dp"
+                                android:topRightRadius="18dp" />
                             <gradient
                                 android:angle="270"
-                                android:startColor="#F2FFFFFF"
+                                android:startColor="#8CFFFFFF"
                                 android:endColor="#00FFFFFF" />
                         </shape>
                     </item>
@@ -63,36 +56,29 @@
                             <solid android:color="#338B5CF6" />
                         </shape>
                     </item>
-                    <item
-                        android:bottom="1.5dp"
-                        android:left="1.5dp"
-                        android:right="1.5dp"
-                        android:top="1.5dp">
+                    <item>
                         <shape android:shape="rectangle">
-                            <corners android:radius="27dp" />
+                            <corners android:radius="28dp" />
                             <gradient
                                 android:angle="270"
-                                android:startColor="#BFB79EFF"
-                                android:endColor="#B38B5CF6" />
-                            <stroke
-                                android:width="1.5dp"
-                                android:color="#99C9B8FF" />
+                                android:startColor="#D8C9AEFF"
+                                android:endColor="#BF9163F0" />
                         </shape>
                     </item>
                     <item
-                        android:bottom="20dp"
-                        android:left="8dp"
-                        android:right="8dp"
-                        android:top="3dp">
+                        android:bottom="24dp"
+                        android:left="10dp"
+                        android:right="10dp"
+                        android:top="2dp">
                         <shape android:shape="rectangle">
                             <corners
                                 android:bottomLeftRadius="0dp"
                                 android:bottomRightRadius="0dp"
-                                android:topLeftRadius="16dp"
-                                android:topRightRadius="16dp" />
+                                android:topLeftRadius="18dp"
+                                android:topRightRadius="18dp" />
                             <gradient
                                 android:angle="270"
-                                android:startColor="#80FFFFFF"
+                                android:startColor="#66FFFFFF"
                                 android:endColor="#00FFFFFF" />
                         </shape>
                     </item>

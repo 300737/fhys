@@ -6,39 +6,32 @@
             <item>
                 <shape android:shape="rectangle">
                     <corners android:radius="28dp" />
-                    <solid android:color="#4D8B5CF6" />
+                    <solid android:color="#338B5CF6" />
                 </shape>
             </item>
-            <item
-                android:bottom="1.5dp"
-                android:left="1.5dp"
-                android:right="1.5dp"
-                android:top="1.5dp">
+            <item>
                 <shape android:shape="rectangle">
-                    <corners android:radius="27dp" />
+                    <corners android:radius="28dp" />
                     <gradient
                         android:angle="270"
-                        android:startColor="#DBC9AEFF"
-                        android:endColor="#CC7C3AED" />
-                    <stroke
-                        android:width="1.5dp"
-                        android:color="#CCD9CCFF" />
+                        android:startColor="#E0C9AEFF"
+                        android:endColor="#CC8F6BF0" />
                 </shape>
             </item>
             <item
-                android:bottom="22dp"
-                android:left="10dp"
-                android:right="10dp"
-                android:top="3dp">
+                android:bottom="26dp"
+                android:left="12dp"
+                android:right="12dp"
+                android:top="2dp">
                 <shape android:shape="rectangle">
                     <corners
                         android:bottomLeftRadius="0dp"
                         android:bottomRightRadius="0dp"
-                        android:topLeftRadius="18dp"
-                        android:topRightRadius="18dp" />
+                        android:topLeftRadius="20dp"
+                        android:topRightRadius="20dp" />
                     <gradient
                         android:angle="270"
-                        android:startColor="#F2FFFFFF"
+                        android:startColor="#8CFFFFFF"
                         android:endColor="#00FFFFFF" />
                 </shape>
             </item>
