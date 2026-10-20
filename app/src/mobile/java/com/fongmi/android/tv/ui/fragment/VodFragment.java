@@ -3,7 +3,6 @@ package com.fongmi.android.tv.ui.fragment;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -234,9 +233,6 @@ public class VodFragment extends BaseFragment implements ConfigListener, SiteLis
         } else {
             mBinding.pager.setAdapter(new PageAdapter(getChildFragmentManager()));
         }
-        makeDraggable(mBinding.filter, mBinding.pager);
-        makeDraggable(mBinding.link, mBinding.pager);
-        makeDraggable(mBinding.top, mBinding.pager);
         setFabVisible(0);
         hideProgress();
         showContent();
@@ -666,54 +662,6 @@ public class VodFragment extends BaseFragment implements ConfigListener, SiteLis
         }
     }
 
-
-    // 悬浮球可拖拽：拖动改右/下边距（锚点 end|bottom），避开卡片；点击仍正常触发
-    private void makeDraggable(View view, View anchor) {
-        view.setOnTouchListener(new DragTouchListener(anchor));
-    }
-
-    private static class DragTouchListener implements View.OnTouchListener {
-        private final View anchor;
-        private float startX;
-        private float startY;
-
-        DragTouchListener(View anchor) {
-            this.anchor = anchor;
-        }
-
-        @Override
-        public boolean onTouch(View view, MotionEvent event) {
-            int action = event.getAction();
-            if (action == MotionEvent.ACTION_DOWN) {
-                startX = event.getRawX();
-                startY = event.getRawY();
-                return true;
-            }
-            if (action == MotionEvent.ACTION_MOVE) {
-                ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) view.getLayoutParams();
-                if (lp == null) return true;
-                int dRight = (int) (startX - event.getRawX());
-                int dBottom = (int) (startY - event.getRawY());
-                int newRight = lp.rightMargin + dRight;
-                int newBottom = lp.bottomMargin + dBottom;
-                if (anchor != null) {
-                    newRight = Math.max(16, Math.min(newRight, anchor.getWidth() - view.getWidth() - 16));
-                    newBottom = Math.max(16, Math.min(newBottom, anchor.getHeight() - view.getHeight() - 16));
-                }
-                lp.rightMargin = newRight;
-                lp.bottomMargin = newBottom;
-                view.setLayoutParams(lp);
-                startX = event.getRawX();
-                startY = event.getRawY();
-                return true;
-            }
-            if (action == MotionEvent.ACTION_UP) {
-                view.performClick();
-                return true;
-            }
-            return false;
-        }
-    }
 
     private void setFabMargin(View view, int bottomMargin) {
         ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) view.getLayoutParams();
