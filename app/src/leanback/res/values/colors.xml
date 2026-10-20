@@ -22,7 +22,9 @@
     <color name="nf_card">#3D3088</color>          <!-- 控件常态（替代 white_10）——满屏卡片主色 -->
     <color name="nf_card_btn">#4A3D9E</color>      <!-- 按钮常态描边（替代 white_30） -->
     <color name="nf_focus">#5EE7FF</color>         <!-- 聚焦实色底：亮青，配深字 -->
-    <color name="nf_on_focus">#0B1520</color>      <!-- 聚焦实色底上的深色文字 -->
+    <color name="nf_on_focus">#1B1035</color>      <!-- 聚焦（亮青 #5EE7FF）/ 选中（亮紫 #9A8BFF）底上的深紫水晶墨：
+                                                         非纯黑——带紫调，与紫水晶默认态同色系；
+                                                         对青底对比度 ≈11.6:1、对紫底 ≈6.4:1，远超 WCAG AA -->
     <color name="nf_focus_stroke">#5EE7FF</color>  <!-- 聚焦描边 -->
     <color name="nf_activated">#9A8BFF</color>     <!-- 选中 / 激活：亮紫 -->
     <color name="nf_accent">#7C6BFF</color>        <!-- 强调紫 -->
