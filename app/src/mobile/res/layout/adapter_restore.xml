@@ -18,7 +18,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:singleLine="true"
-            android:textColor="@color/nf_text"
+            android:textColor="@color/nf_on_focus"
             android:textSize="14sp" />
 
         <com.google.android.material.textview.MaterialTextView
@@ -26,7 +26,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:singleLine="true"
-            android:textColor="@color/nf_text_2"
+            android:textColor="@color/nf_text_3"
             android:textSize="12sp" />
 
     </androidx.appcompat.widget.LinearLayoutCompat>
