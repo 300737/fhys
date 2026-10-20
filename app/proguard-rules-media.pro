@@ -52,11 +52,6 @@
   <init>(long, android.os.Handler, androidx.media3.exoplayer.video.VideoRendererEventListener, int);
 }
 
--dontnote androidx.media3.decoder.ffmpeg.ExperimentalFfmpegVideoRenderer
--keepclassmembers class androidx.media3.decoder.ffmpeg.ExperimentalFfmpegVideoRenderer {
-  <init>(long, android.os.Handler, androidx.media3.exoplayer.video.VideoRendererEventListener, int);
-}
-
 -dontnote androidx.media3.decoder.opus.LibopusAudioRenderer
 -keepclassmembers class androidx.media3.decoder.opus.LibopusAudioRenderer {
   <init>(android.os.Handler, androidx.media3.exoplayer.audio.AudioRendererEventListener, androidx.media3.exoplayer.audio.AudioSink);
@@ -70,11 +65,6 @@
 -dontnote androidx.media3.decoder.iamf.LibiamfAudioRenderer
 -keepclassmembers class androidx.media3.decoder.iamf.LibiamfAudioRenderer {
   <init>(android.content.Context, android.os.Handler, androidx.media3.exoplayer.audio.AudioRendererEventListener, androidx.media3.exoplayer.audio.AudioSink);
-}
-
--dontnote androidx.media3.decoder.ffmpeg.FfmpegAudioRenderer
--keepclassmembers class androidx.media3.decoder.ffmpeg.FfmpegAudioRenderer {
-  <init>(android.os.Handler, androidx.media3.exoplayer.audio.AudioRendererEventListener, androidx.media3.exoplayer.audio.AudioSink);
 }
 
 -dontnote androidx.media3.decoder.midi.MidiRenderer

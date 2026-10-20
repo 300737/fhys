@@ -153,6 +153,5 @@ media3 = [
     "media3-extractor",
     "media3-session",
     "media3-ui",
-    "media3-decoder-ffmpeg",
     "media3-ui-danmaku"
 ]
