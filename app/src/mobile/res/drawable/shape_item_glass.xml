@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:state_selected="true">
-        <ripple android:color="#33FFFFFF">
+        <ripple android:color="#40A855F7">
             <item>
                 <layer-list>
                     <item>
                         <shape android:shape="rectangle">
                             <corners android:radius="28dp" />
-                            <solid android:color="#2E7C6BFF" />
+                            <solid android:color="#667C3AED" />
                         </shape>
                     </item>
                     <item
@@ -17,10 +17,10 @@
                         android:top="1.5dp">
                         <shape android:shape="rectangle">
                             <corners android:radius="27dp" />
-                            <solid android:color="#E6837BE0" />
+                            <solid android:color="#E67C3AED" />
                             <stroke
                                 android:width="1.5dp"
-                                android:color="#CCD6D1FA" />
+                                android:color="#E65EE7FF" />
                         </shape>
                     </item>
                 </layer-list>
@@ -34,13 +34,13 @@
         </ripple>
     </item>
     <item>
-        <ripple android:color="#26FFFFFF">
+        <ripple android:color="#26A855F7">
             <item>
                 <layer-list>
                     <item>
                         <shape android:shape="rectangle">
                             <corners android:radius="28dp" />
-                            <solid android:color="#2E7C6BFF" />
+                            <solid android:color="#338B5CF6" />
                         </shape>
                     </item>
                     <item
@@ -50,10 +50,10 @@
                         android:top="1.5dp">
                         <shape android:shape="rectangle">
                             <corners android:radius="27dp" />
-                            <solid android:color="#B39189DC" />
+                            <solid android:color="#B38B5CF6" />
                             <stroke
                                 android:width="1.5dp"
-                                android:color="#99D6D1FA" />
+                                android:color="#80A855F7" />
                         </shape>
                     </item>
                 </layer-list>
