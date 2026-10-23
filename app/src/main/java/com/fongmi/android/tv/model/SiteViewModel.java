@@ -5,6 +5,7 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 import com.fongmi.android.tv.Constant;
+import com.fongmi.android.tv.api.Prewarm;
 import com.fongmi.android.tv.api.SiteApi;
 import com.fongmi.android.tv.api.config.VodConfig;
 import com.fongmi.android.tv.bean.Result;
@@ -76,7 +77,12 @@ public class SiteViewModel extends ViewModel {
     }
 
     public void homeContent() {
-        execute(TaskType.RESULT, result, () -> SiteApi.homeContent(VodConfig.get().getHome()));
+        execute(TaskType.RESULT, result, () -> {
+            Site home = VodConfig.get().getHome();
+            // 首页预热命中：直接用缓存结果，免现场加载
+            Result warm = Prewarm.get(home.getKey());
+            return warm != null ? warm : SiteApi.homeContent(home);
+        });
     }
 
     public void categoryContent(String key, String tid, String page, boolean filter, HashMap<String, String> extend) {

@@ -4,6 +4,7 @@ import android.text.TextUtils;
 
 import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.api.Decoder;
+import com.fongmi.android.tv.api.Prewarm;
 import com.fongmi.android.tv.api.loader.BaseLoader;
 import com.fongmi.android.tv.bean.Config;
 import com.fongmi.android.tv.bean.Depot;
@@ -93,6 +94,7 @@ public class VodConfig extends BaseConfig {
         parses = null;
         BaseLoader.get().clear();
         RuleConfig.get().invalidate();
+        Prewarm.clear();
         return this;
     }
 
@@ -110,6 +112,8 @@ public class VodConfig extends BaseConfig {
     protected void postEvent() {
         super.postEvent();
         ConfigEvent.vod();
+        // 配置加载结束（成功且站点已就位）后，后台预热全部站点首页内容
+        App.post(Prewarm::start);
     }
 
     @Override
