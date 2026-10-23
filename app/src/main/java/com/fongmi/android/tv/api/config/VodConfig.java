@@ -17,14 +17,11 @@ import com.fongmi.android.tv.utils.UrlUtil;
 import com.github.catvod.bean.Doh;
 import com.github.catvod.bean.Header;
 import com.github.catvod.bean.Proxy;
-import com.github.catvod.net.OkHttp;
 import com.github.catvod.utils.Json;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -260,49 +257,8 @@ public class VodConfig extends BaseConfig {
         if (sync) WallConfig.get().config(temp.update());
     }
 
-    /**
-     * spider jar 地址兜底：面板/中转下发的配置常把 jar 写成相对路径（./xxx.jar），
-     * Decoder 只会按「配置地址」所在域名拼接；若 jar 实际放在站点 api 的目录里（面板服务器上没有），
-     * 拼出来的地址就是 404，所有 csp 站点会变成空壳、分类全空。
-     * 处理：主地址加载失败时，用配置里各站点 api 的目录（先上一级、再本级）逐个重试同名 jar，
-     * 找到第一个能下载到的地址就用它。主地址正常时零开销（直接返回）。
-     */
-    private String resolveSpider(String spider, JsonObject object) {
-        if (TextUtils.isEmpty(spider) || !spider.startsWith("http")) return spider;
-        String raw = spider.split(";md5;")[0];
-        String file = raw.substring(raw.lastIndexOf('/') + 1);
-        if (TextUtils.isEmpty(file)) return spider;
-        if (BaseLoader.get().dex(spider) != null) return spider;
-        LinkedHashSet<String> bases = new LinkedHashSet<>();
-        for (JsonElement e : Json.safeListElement(object, "sites")) {
-            if (!e.isJsonObject()) continue;
-            String api = Json.safeString(e.getAsJsonObject(), "api");
-            int cut = api.lastIndexOf('/');
-            if (cut < 8) continue;
-            String dir = api.substring(0, cut + 1);
-            int parent = dir.lastIndexOf('/', dir.length() - 2);
-            if (parent >= 8) bases.add(dir.substring(0, parent + 1));
-            bases.add(dir);
-        }
-        for (String base : bases) {
-            String candidate = base + file;
-            try {
-                okhttp3.Response resp = OkHttp.newCall(candidate).execute();
-                boolean ok;
-                try {
-                    ok = resp.isSuccessful();
-                } finally {
-                    resp.close();
-                }
-                if (ok) return candidate;
-            } catch (Throwable ignored) {
-            }
-        }
-        return spider;
-    }
-
     private void initSite(Config config, JsonObject object) {
-        String spider = resolveSpider(Json.safeString(object, "spider"), object);
+        String spider = Json.safeString(object, "spider");
         BaseLoader.get().parseJar(spider, true);
         setSites(Json.safeListElement(object, "sites").stream().map(e -> Site.objectFrom(e, spider)).distinct().collect(Collectors.toCollection(ArrayList::new)));
         List<Site> dbSites = Site.findAll();
