@@ -29,7 +29,7 @@ def resolveSigningSecret = { String propKey, String envKey ->
 
 // 版本号单一事实来源：只在这里维护 VERSION_CODE，versionName 由它拼出，
 // MT管理器显示的 versionCode 与应用内"关于"页显示的版本名因此永远一致。
-def VERSION_CODE = 577
+def VERSION_CODE = 578
 def VERSION_BASE = "1.0"
 def VERSION_NAME = "${VERSION_BASE}.${VERSION_CODE}"
 

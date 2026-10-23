@@ -27,6 +27,9 @@
 -keep class okio.** { *; }
 -keep class okhttp3.** { *; }
 
+# SLF4J（上游 FongMi 同款；外部 spider jar 按原名引用，缺了会被 R8 改名导致 jar 全挂）
+-keep class org.slf4j.** { *; }
+
 # CatVod
 -keep class com.github.catvod.Proxy { *; }
 -keep class com.github.catvod.crawler.** { *; }
