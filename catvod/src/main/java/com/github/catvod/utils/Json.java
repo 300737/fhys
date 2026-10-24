@@ -196,10 +196,14 @@ public class Json {
         return obj("vod_id", str(id), "vod_name", str(name), "vod_pic", str(cover), "vod_remarks", str(remarks));
     }
 
-    /** 接口没给封面时用实时豆瓣图顶上，避免首页一整排裂图 */
+    /** 接口没给封面时按片名去自建图床取豆瓣真海报，避免首页一整排裂图、也避免图跟片名对不上 */
     private static String fallbackPic(String name) {
-        int i = Math.abs(name == null ? 0 : name.hashCode()) % 10;
-        return "https://img.612526.xyz/api/douban?type=movie&tag=" + i + "&i=" + i;
+        if (name == null || name.trim().isEmpty()) return "https://img.612526.xyz/api/douban?type=movie&tag=" + 0 + "&i=" + 0;
+        try {
+            return "https://img.612526.xyz/api/poster?wd=" + java.net.URLEncoder.encode(name.trim(), "UTF-8").replace("+", "%20");
+        } catch (Throwable e) {
+            return "https://img.612526.xyz/api/poster?wd=" + name.trim();
+        }
     }
 
     public static String emptyListResult(int page) {
