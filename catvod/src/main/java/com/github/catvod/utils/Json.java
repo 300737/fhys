@@ -200,9 +200,9 @@ public class Json {
     private static String fallbackPic(String name) {
         if (name == null || name.trim().isEmpty()) return "https://img.612526.xyz/api/douban?type=movie&tag=" + 0 + "&i=" + 0;
         try {
-            return "https://img.612526.xyz/api/poster?wd=" + java.net.URLEncoder.encode(name.trim(), "UTF-8").replace("+", "%20");
+            return "https://img.612526.xyz/api/smart?wd=" + java.net.URLEncoder.encode(name.trim(), "UTF-8").replace("+", "%20");
         } catch (Throwable e) {
-            return "https://img.612526.xyz/api/poster?wd=" + name.trim();
+            return "https://img.612526.xyz/api/smart?wd=" + name.trim();
         }
     }
 
