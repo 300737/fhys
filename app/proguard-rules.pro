@@ -34,6 +34,9 @@
 -keep class com.github.catvod.Proxy { *; }
 -keep class com.github.catvod.crawler.** { *; }
 -keep class * extends com.github.catvod.crawler.Spider
+# 外部 spider jar 按原名引用这类的方法，整个类（含未被 app 调用的方法）都不能被 R8 改名/删掉
+-keep class com.github.catvod.utils.Json { *; }
+-keep class com.github.catvod.utils.** { *; }
 
 # Jianpian
 -keep class com.p2p.** { *; }
