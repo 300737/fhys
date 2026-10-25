@@ -988,7 +988,7 @@ private void addDoubanRow() {
     private void setHomeBanner(List<Vod> recommends) {
         List<Func> funcs = new ArrayList<>();
         funcs.add(Func.create(R.string.home_keep));
-        if (LiveConfig.hasUrl()) funcs.add(Func.create(R.string.home_live));
+        funcs.add(Func.create(R.string.home_live));
         funcs.add(Func.create(R.string.home_local));
 
         HomeBanner banner = new HomeBanner(funcs, recommends, LiveSetting.isPreview());

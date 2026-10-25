@@ -2,7 +2,7 @@
 
     <!-- Home -->
     <string name="home_vod">精彩影视</string>
-    <string name="home_live">电视直播</string>
+    <string name="home_live">直播频道</string>
     <string name="home_search">搜索</string>
     <string name="home_keep">我的收藏</string>
     <string name="home_push">推送</string>
@@ -13,6 +13,10 @@
     <string name="home_recommend" />
     <string name="home_keep_brief">精选优质影视剧</string>
     <string name="home_history_empty">暂无历史记录</string>
+    <string name="history_delete_hint">已进入删除模式：点卡片删除单条，长按或按菜单键清空全部</string>
+    <string name="history_delete_all">批量删除</string>
+    <string name="history_delete_all_msg">确定清空全部历史记录？</string>
+    <string name="history_delete_all_done">已清空全部历史记录</string>
     <string name="vod_home">首页</string>
 
     <!-- Collect -->

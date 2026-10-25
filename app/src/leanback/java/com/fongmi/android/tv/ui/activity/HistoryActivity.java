@@ -3,11 +3,14 @@ package com.fongmi.android.tv.ui.activity;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.KeyEvent;
 
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.viewbinding.ViewBinding;
 
+import com.fongmi.android.tv.db.AppDatabase;
 import com.fongmi.android.tv.Product;
+import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.api.config.VodConfig;
 import com.fongmi.android.tv.bean.Config;
 import com.fongmi.android.tv.bean.History;
@@ -18,6 +21,9 @@ import com.fongmi.android.tv.ui.adapter.HistoryAdapter;
 import com.fongmi.android.tv.ui.base.BaseActivity;
 import com.fongmi.android.tv.ui.custom.SpaceItemDecoration;
 import com.fongmi.android.tv.utils.Notify;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+
+import java.util.ArrayList;
 
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
@@ -92,8 +98,41 @@ public class HistoryActivity extends BaseActivity implements HistoryAdapter.OnCl
 
     @Override
     public boolean onLongClick() {
+        if (mAdapter.isDelete() && mAdapter.getItemCount() > 0) {
+            confirmDeleteAll();
+            return true;
+        }
         mAdapter.setDelete(true);
+        Notify.show(R.string.history_delete_hint);
         return true;
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_MENU && mAdapter.isDelete() && mAdapter.getItemCount() > 0) {
+            confirmDeleteAll();
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
+    }
+
+    private void confirmDeleteAll() {
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.history_delete_all)
+                .setMessage(R.string.history_delete_all_msg)
+                .setPositiveButton(R.string.dialog_positive, (dialog, which) -> deleteAll())
+                .setNegativeButton(R.string.dialog_negative, null)
+                .show();
+    }
+
+    private void deleteAll() {
+        AppDatabase.get().getHistoryDao().delete();
+        AppDatabase.get().getTrackDao().deleteAll();
+        mAdapter.setItems(new ArrayList<>(), () -> mBinding.progressLayout.showContent(true, mAdapter.getItemCount()));
+        mAdapter.setDelete(false);
+        RefreshEvent.history();
+        com.fongmi.android.tv.utils.WebDavSync.upload(null);
+        Notify.show(R.string.history_delete_all_done);
     }
 
     @Override

@@ -13,6 +13,10 @@
     <string name="home_recommend" />
     <string name="home_keep_brief">Selected high-quality movies and TV series</string>
     <string name="home_history_empty">No Watch History</string>
+    <string name="history_delete_hint">Delete mode: click to remove one, long-press or MENU to clear all</string>
+    <string name="history_delete_all">Delete All</string>
+    <string name="history_delete_all_msg">Clear all watch history?</string>
+    <string name="history_delete_all_done">All history cleared</string>
     <string name="vod_home">Home</string>
 
     <!-- Collect -->
