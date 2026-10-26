@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:fillViewport="true"
     tools:ignore="NestedWeights"
-    android:background="@drawable/bg_page">
+    android:background="@android:color/transparent">
 
     <androidx.appcompat.widget.LinearLayoutCompat
         android:layout_width="match_parent"
@@ -18,7 +18,7 @@
             android:id="@+id/danmakuLoad"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@drawable/selector_item"
+            android:background="@drawable/selector_cell"
             android:focusable="true"
             android:focusableInTouchMode="true"
             android:orientation="horizontal">
@@ -47,7 +47,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:background="@drawable/selector_item"
+            android:background="@drawable/selector_cell"
             android:focusable="true"
             android:focusableInTouchMode="true"
             android:orientation="horizontal"
@@ -80,7 +80,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:background="@drawable/selector_item"
+            android:background="@drawable/selector_cell"
             android:focusable="true"
             android:focusableInTouchMode="true"
             android:orientation="horizontal"
@@ -111,7 +111,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:background="@drawable/selector_item"
+            android:background="@drawable/selector_cell"
             android:focusable="true"
             android:focusableInTouchMode="true"
             android:orientation="horizontal"

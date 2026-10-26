@@ -35,6 +35,11 @@ public class SettingPlayerActivity extends BaseActivity implements UaListener, B
         activity.startActivity(new Intent(activity, SettingPlayerActivity.class));
     }
 
+    @Override
+    protected boolean customWall() {
+        return false;
+    }
+
     private String getSwitch(boolean value) {
         return getString(value ? R.string.setting_on : R.string.setting_off);
     }
@@ -47,6 +52,7 @@ public class SettingPlayerActivity extends BaseActivity implements UaListener, B
     @Override
     protected void initView(Bundle savedInstanceState) {
         setVisible();
+        setDialogWindow(0.5f);
         format = new DecimalFormat("0.#");
         mBinding.render.requestFocus();
         mBinding.uaText.setText(Setting.getUa());

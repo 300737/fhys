@@ -32,6 +32,17 @@
 
     <style name="Theme.App" parent="Theme.Base" />
 
+    <!-- 居中悬浮对话框主题：窗口背景直接复用「搜索线程」同款圆角渐变面板 -->
+    <style name="Theme.Dialog" parent="Theme.App">
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowBackground">@drawable/bg_dialog_search_thread</item>
+        <item name="android:windowFullscreen">false</item>
+        <item name="android:windowTranslucentStatus">false</item>
+        <item name="android:windowTranslucentNavigation">false</item>
+        <item name="android:windowCloseOnTouchOutside">false</item>
+    </style>
+
     <!-- 首页启动主题：窗口首帧即城堡壁纸（与开机动画无缝衔接，无纯色闪屏、无圆形 logo） -->
     <style name="Theme.Launch" parent="Theme.App">
         <item name="android:windowBackground">@drawable/bg_launch</item>

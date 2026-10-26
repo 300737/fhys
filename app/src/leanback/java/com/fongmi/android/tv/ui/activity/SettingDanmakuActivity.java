@@ -24,6 +24,11 @@ public class SettingDanmakuActivity extends BaseActivity implements DanmakuListe
         activity.startActivity(new Intent(activity, SettingDanmakuActivity.class));
     }
 
+    @Override
+    protected boolean customWall() {
+        return false;
+    }
+
     private String getSwitch(boolean value) {
         return getString(value ? R.string.setting_on : R.string.setting_off);
     }
@@ -52,6 +57,7 @@ public class SettingDanmakuActivity extends BaseActivity implements DanmakuListe
 
     @Override
     protected void initView(Bundle savedInstanceState) {
+        setDialogWindow(0.4f);
         mBinding.danmakuLoad.requestFocus();
         updateApiText();
         mBinding.danmakuAutoText.setText(getSwitch(DanmakuSetting.isAuto()));

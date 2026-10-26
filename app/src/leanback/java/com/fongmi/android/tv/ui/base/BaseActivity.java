@@ -5,8 +5,12 @@ import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.os.Bundle;
+import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
+
+import com.fongmi.android.tv.utils.ResUtil;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
@@ -48,6 +52,16 @@ public abstract class BaseActivity extends AppCompatActivity {
 
     protected FragmentActivity getActivity() {
         return this;
+    }
+
+    /**
+     * 把当前 Activity 当作居中悬浮对话框：宽度按屏宽比例（与「搜索线程」弹窗同一算法），
+     * 高度自适应内容（过长则窗口内滚动），水平垂直居中。需配合 Theme.Dialog 使用。
+     */
+    protected void setDialogWindow(float fraction) {
+        Window window = getWindow();
+        window.setLayout((int) (ResUtil.getScreenWidth() * fraction), ViewGroup.LayoutParams.WRAP_CONTENT);
+        window.setGravity(Gravity.CENTER);
     }
 
     protected boolean customWall() {

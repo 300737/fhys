@@ -171,17 +171,20 @@
         <activity
             android:name=".ui.activity.SettingPlayerActivity"
             android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
-            android:screenOrientation="sensorLandscape" />
+            android:screenOrientation="sensorLandscape"
+            android:theme="@style/Theme.Dialog" />
 
         <activity
             android:name=".ui.activity.SettingDanmakuActivity"
             android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
-            android:screenOrientation="sensorLandscape" />
+            android:screenOrientation="sensorLandscape"
+            android:theme="@style/Theme.Dialog" />
 
         <activity
             android:name=".ui.activity.SettingHomeActivity"
             android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
-            android:screenOrientation="sensorLandscape" />
+            android:screenOrientation="sensorLandscape"
+            android:theme="@style/Theme.Dialog" />
 
         <service
             android:name=".service.DLNARendererService"

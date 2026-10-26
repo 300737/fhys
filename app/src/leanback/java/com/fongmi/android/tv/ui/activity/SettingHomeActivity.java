@@ -23,6 +23,11 @@ public class SettingHomeActivity extends BaseActivity {
         activity.startActivity(new Intent(activity, SettingHomeActivity.class));
     }
 
+    @Override
+    protected boolean customWall() {
+        return false;
+    }
+
     private String getSwitch(boolean value) {
         return getString(value ? R.string.setting_on : R.string.setting_off);
     }
@@ -34,6 +39,7 @@ public class SettingHomeActivity extends BaseActivity {
 
     @Override
     protected void initView(Bundle savedInstanceState) {
+        setDialogWindow(0.4f);
         mBinding.livePreview.requestFocus();
         mBinding.livePreviewText.setText(getSwitch(LiveSetting.isPreview()));
         mBinding.homeMuteText.setText(getSwitch(PlayerSetting.isHomeMute()));
