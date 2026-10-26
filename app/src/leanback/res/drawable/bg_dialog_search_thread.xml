@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 星河霓虹：搜索线程弹窗底（与设置页 bg_page 同款渐变 + 四角圆角） -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <gradient
+        android:angle="270"
+        android:centerColor="#2A1C6B"
+        android:centerY="0.5"
+        android:endColor="#150F30"
+        android:startColor="#3B2890"
+        android:type="linear" />
+    <corners android:radius="20dp" />
+</shape>

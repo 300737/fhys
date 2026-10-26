@@ -61,10 +61,10 @@ public class SearchThreadDialog extends BaseAlertDialog implements SearchThreadA
     @Override
     public void onStart() {
         super.onStart();
-        setWidth(0.5f);
-        // 弹窗背景与设置页完全一致（bg_page 星河霓虹渐变）
+        setWidth(0.4f);
+        // 弹窗背景与设置页同款渐变（星河霓虹）+ 四角圆角，等比缩小
         if (getDialog() != null && getDialog().getWindow() != null) {
-            getDialog().getWindow().setBackgroundDrawableResource(com.fongmi.android.tv.R.drawable.bg_page);
+            getDialog().getWindow().setBackgroundDrawableResource(com.fongmi.android.tv.R.drawable.bg_dialog_search_thread);
         }
     }
 
