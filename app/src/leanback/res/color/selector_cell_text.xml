@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 单元格文字色：选中态(紫)用 cell_value_csl，默认态用 cell_label_csl，与设置页完全一致 -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:color="@color/cell_value_csl" android:state_selected="true" />
+    <item android:color="@color/cell_label_csl" />
+</selector>

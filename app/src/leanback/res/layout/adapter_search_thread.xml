@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 搜索线程选项：背景/文字色与设置页单元格(selector_cell / cell_label_csl / cell_value_csl)完全一致 -->
+<com.google.android.material.textview.MaterialTextView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/text"
+    android:layout_width="match_parent"
+    android:layout_height="48dp"
+    android:background="@drawable/selector_cell"
+    android:focusable="true"
+    android:focusableInTouchMode="true"
+    android:gravity="center"
+    android:singleLine="true"
+    android:textColor="@color/selector_cell_text"
+    android:textSize="14sp"
+    tools:text="24" />

@@ -221,6 +221,15 @@ public class Setting {
         Prefers.put("search_mode", value);
     }
 
+    // 搜索并发线程数（默认 24，可选 12/16/24/36/48）
+    public static int getSearchThreads() {
+        return Prefers.getInt("search_threads", 24);
+    }
+
+    public static void putSearchThreads(int value) {
+        Prefers.put("search_threads", value);
+    }
+
     public static int getLayoutMode() {
         return Prefers.getInt("layout_mode", 0);
     }

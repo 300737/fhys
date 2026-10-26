@@ -36,12 +36,14 @@ import com.fongmi.android.tv.ui.dialog.DoubanDialog;
 import com.fongmi.android.tv.ui.dialog.HistoryDialog;
 import com.fongmi.android.tv.ui.dialog.LiveDialog;
 import com.fongmi.android.tv.ui.dialog.RestoreDialog;
+import com.fongmi.android.tv.ui.dialog.SearchThreadDialog;
 import com.fongmi.android.tv.ui.dialog.WebDavDialog;
 import com.fongmi.android.tv.ui.dialog.SiteDialog;
 import com.fongmi.android.tv.utils.FileUtil;
 import com.fongmi.android.tv.utils.Notify;
 import com.fongmi.android.tv.utils.PermissionUtil;
 import com.fongmi.android.tv.utils.ResUtil;
+import com.fongmi.android.tv.utils.Task;
 import com.github.catvod.bean.Doh;
 import com.github.catvod.net.OkHttp;
 
@@ -51,11 +53,12 @@ import org.greenrobot.eventbus.ThreadMode;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SettingActivity extends BaseActivity implements ConfigListener, SiteListener, LiveListener, DohDialog.Listener, DoubanListener {
+public class SettingActivity extends BaseActivity implements ConfigListener, SiteListener, LiveListener, DohDialog.Listener, DoubanListener, SearchThreadDialog.Listener {
 
     private ActivitySettingBinding mBinding;
     private String[] size;
     private String[] search;
+    private static final String[] THREADS = {"12", "16", "24", "36", "48"};
 
     public static void start(Activity activity) {
         activity.startActivity(new Intent(activity, SettingActivity.class));
@@ -99,6 +102,7 @@ public class SettingActivity extends BaseActivity implements ConfigListener, Sit
         mBinding.liveBootText.setText(getSwitch(LiveSetting.isBootGlobal()));
         mBinding.sizeText.setText((size = ResUtil.getStringArray(R.array.select_size))[PlayerSetting.getSize()]);
         mBinding.searchText.setText((search = ResUtil.getStringArray(R.array.select_search))[Setting.getSearchMode()]);
+        mBinding.reloadText.setText(String.valueOf(Setting.getSearchThreads()));
     }
 
     private void setCacheText() {
@@ -253,7 +257,22 @@ public class SettingActivity extends BaseActivity implements ConfigListener, Sit
     }
 
     private void onReload(View view) {
-        initConfig();
+        SearchThreadDialog.create().index(getThreadIndex()).show(this);
+    }
+
+    private int getThreadIndex() {
+        int threads = Setting.getSearchThreads();
+        for (int i = 0; i < THREADS.length; i++) {
+            if (Integer.parseInt(THREADS[i]) == threads) return i;
+        }
+        return 2; // 默认 24
+    }
+
+    @Override
+    public void setSearchThreads(int threads) {
+        Setting.putSearchThreads(threads);
+        Task.setSearchThreads(threads);
+        mBinding.reloadText.setText(String.valueOf(threads));
     }
 
     private void setWallDefault(View view) {

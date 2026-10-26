@@ -376,11 +376,12 @@
                         android:duplicateParentState="true"
                         android:gravity="start|center_vertical"
                         android:singleLine="true"
-                        android:text="重载配置"
+                        android:text="搜索线程"
                         android:textColor="@color/cell_label_csl"
                         android:textSize="14sp" />
 
                     <com.google.android.material.textview.MaterialTextView
+                        android:id="@+id/reloadText"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="6dp"
@@ -388,7 +389,7 @@
                         android:duplicateParentState="true"
                         android:gravity="end"
                         android:singleLine="true"
-                        android:text="刷新"
+                        android:text="24"
                         android:textColor="@color/cell_value_csl"
                         android:textSize="14sp" />
                 </androidx.appcompat.widget.LinearLayoutCompat>
