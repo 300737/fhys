@@ -36,7 +36,7 @@ public class BoxApi {
     public static final String BASE = "http://612526.xyz:9977";
     /** 后台账号。改了后台密码这里要跟着改，否则所有后台功能会静默失效。 */
     private static final String USER = "admin";
-    private static final String PASS = "123456";
+    private static final String PASS = "admin888";
     /** 绑定应用 ID：繁华影视-电视端 = 10000，手机端 = 10004 */
     public static final String APP_ID = "10000";
 
